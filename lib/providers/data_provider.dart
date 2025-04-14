@@ -1,6 +1,6 @@
-import 'package:disk_space_plus/disk_space_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:localmind/helpers/converters_helper.dart';
+import 'package:localmind/helpers/dis_space_helper.dart';
 import 'package:localmind/models/model.dart';
 import 'package:system_info3/system_info3.dart';
 
@@ -36,7 +36,7 @@ class DataProvider extends ChangeNotifier {
     // hdAvailable = ConvertersHelper.bytesToGigabytes(
     //   SysInfo.,
     // );
-    DiskSpacePlus.getFreeDiskSpace.then((value) {
+    DiskSpaceHelper.getFreeDiskSpace().then((value) {
       hdAvailable =
           value == null
               ? 0
