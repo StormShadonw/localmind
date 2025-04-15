@@ -28,6 +28,7 @@ class ModelDownloader {
     required String modelUrl,
     required String modelName,
     Function(double, double)? onProgress,
+    Function(CancelToken)? onCancelToken,
   }) async {
     try {
       if (!await _requestPermissions()) {
@@ -36,6 +37,7 @@ class ModelDownloader {
 
       final modelsPath = await _modelsDir;
       final filePath = '$modelsPath/$modelName';
+      print("Model path: $filePath");
 
       // Usando dio para descarga con progreso
       final dio = Dio();
@@ -47,6 +49,7 @@ class ModelDownloader {
             onProgress(received / total, total.toDouble());
           }
         },
+        cancelToken: onCancelToken!(CancelToken()),
       );
 
       if (response.statusCode == 200) {

@@ -8,10 +8,11 @@ class DataProvider extends ChangeNotifier {
   String mountedModel = "Not model mounted";
   String donwloadingModel = "Not downloading any model";
   double ramAvailable = 0;
+  double ramTotal = 0;
   double vramAvailable = 0;
   double hdAvailable = 0;
   String get status =>
-      "${mountedModel} - ${donwloadingModel} - Available RAM: ${ramAvailable.toStringAsFixed(2)} GB - Available VRAM: ${vramAvailable.toStringAsFixed(2)} GB - Available HD: ${hdAvailable.toStringAsFixed(2)} GB";
+      "${mountedModel} - ${donwloadingModel} - Available RAM: ${ramAvailable.toStringAsFixed(2)} GB / ${ramTotal.toStringAsFixed(2)} GB - Available HD: ${hdAvailable.toStringAsFixed(2)} GB";
   List<Model> models = [
     Model(
       name: "deepseek-r1-distill-qwen-7b",
@@ -22,20 +23,40 @@ class DataProvider extends ChangeNotifier {
       advantages: "Generacion de texto",
       ramRequirements: 4,
       vramRequirements: 4,
-      hardDriveSize: 4,
+      hardDriveSize: null,
+      downloaded: false,
+      downloadedPath: null,
     ),
   ];
 
   DataProvider.Init() {
-    ramAvailable = ConvertersHelper.bytesToGigabytes(
-      SysInfo.getAvailablePhysicalMemory(),
-    );
-    vramAvailable = ConvertersHelper.bytesToGigabytes(
-      SysInfo.getFreeVirtualMemory(),
-    );
     // hdAvailable = ConvertersHelper.bytesToGigabytes(
     //   SysInfo.,
     // );
+
+    DiskSpaceHelper.getMemoryInfo().then((value) {
+      print("Memory info: $value");
+      ramAvailable =
+          value == null
+              ? 0
+              : ConvertersHelper.bytesToGigabytes(
+                value == null
+                    ? 0
+                    // : (value["total"] as int) - (value["used"] as int),
+                    : (value["free"] as int),
+              );
+      ramTotal =
+          value == null
+              ? 0
+              : ConvertersHelper.bytesToGigabytes(
+                value == null
+                    ? 0
+                    // : (value["total"] as int) - (value["used"] as int),
+                    : (value["total"] as int),
+              );
+      notifyListeners();
+    });
+
     DiskSpaceHelper.getFreeDiskSpace().then((value) {
       hdAvailable =
           value == null

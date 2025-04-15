@@ -6,7 +6,9 @@ class Model {
   String advantages;
   int ramRequirements;
   int vramRequirements;
-  int hardDriveSize;
+  double? hardDriveSize;
+  bool downloaded;
+  String? downloadedPath;
 
   Model({
     required this.name,
@@ -17,5 +19,7 @@ class Model {
     required this.ramRequirements,
     required this.vramRequirements,
     required this.hardDriveSize,
+    required this.downloaded,
+    required this.downloadedPath,
   });
 }
