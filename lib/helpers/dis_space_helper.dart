@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 class DiskSpaceHelper {
   static const MethodChannel _channel = MethodChannel('disk_space');
+  static const MethodChannel _memoryChannel = MethodChannel('memory_info');
 
   /// Obtiene el espacio libre en disco en bytes
   static Future<int> getFreeDiskSpace() async {
@@ -24,6 +25,38 @@ class DiskSpaceHelper {
     } on PlatformException catch (e) {
       print("Error al obtener espacio total: ${e.message}");
       return -1;
+    }
+  }
+
+  static Future<int> getFreeMemory() async {
+    try {
+      final result = await _memoryChannel.invokeMethod('getFreeMemory');
+      return result as int;
+    } on PlatformException catch (e) {
+      print("Error al obtener memoria libre: ${e.message}");
+      return -1;
+    }
+  }
+
+  /// Obtiene la memoria RAM total en bytes
+  static Future<int> getTotalMemory() async {
+    try {
+      final result = await _memoryChannel.invokeMethod('getTotalMemory');
+      return result as int;
+    } on PlatformException catch (e) {
+      print("Error al obtener memoria total: ${e.message}");
+      return -1;
+    }
+  }
+
+  /// Obtiene información detallada de la memoria
+  static Future<Map<String, int>> getMemoryInfo() async {
+    try {
+      final result = await _memoryChannel.invokeMethod('getMemoryInfo');
+      return Map<String, int>.from(result);
+    } on PlatformException catch (e) {
+      print("Error al obtener info de memoria: ${e.message}");
+      return {};
     }
   }
 
