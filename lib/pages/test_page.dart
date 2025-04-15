@@ -29,7 +29,7 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
     final path = await ModelDownloader.downloadModel(
       modelUrl: widget.modelUrl,
       modelName: widget.modelName,
-      onProgress: (progress, total) {
+      onProgress: (progress, total, sppedText) {
         setState(() {
           _downloadProgress = progress;
         });

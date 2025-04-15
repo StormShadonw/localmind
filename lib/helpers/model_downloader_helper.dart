@@ -27,7 +27,7 @@ class ModelDownloader {
   static Future<String?> downloadModel({
     required String modelUrl,
     required String modelName,
-    Function(double, double)? onProgress,
+    Function(double, double, String)? onProgress,
     Function(CancelToken)? onCancelToken,
   }) async {
     try {
@@ -41,12 +41,41 @@ class ModelDownloader {
 
       // Usando dio para descarga con progreso
       final dio = Dio();
+      DateTime startTime = DateTime.now();
       final response = await dio.download(
         modelUrl,
         filePath,
         onReceiveProgress: (received, total) {
+          final currentTime = DateTime.now();
+
+          // Calcular el tiempo transcurrido en segundos
+          final timeElapsed =
+              currentTime.difference(startTime).inMilliseconds / 1000;
+
+          // Calcular los bytes descargados desde la última actualización
+          final bytesDownloaded = received;
+
+          // Calcular la velocidad en bytes/segundo
+          final downloadSpeed = bytesDownloaded / timeElapsed;
+
+          // Convertir a una unidad más legible (opcional)
+          String speedText;
+          if (downloadSpeed < 1024) {
+            speedText = '${downloadSpeed.toStringAsFixed(0)} B/s';
+          } else if (downloadSpeed < 1024 * 1024) {
+            speedText = '${(downloadSpeed / 1024).toStringAsFixed(0)} KB/s';
+          } else {
+            speedText =
+                '${(downloadSpeed / (1024 * 1024)).toStringAsFixed(0)} MB/s';
+          }
+
+          print('speedText: $speedText');
+          print('downloadSpeed: $downloadSpeed');
+
           if (total != -1 && onProgress != null) {
-            onProgress(received / total, total.toDouble());
+            onProgress(received / total, total.toDouble(), speedText);
+            // También podrías pasar la velocidad aquí si lo necesitas
+            // onProgress(received / total, total.toDouble(), downloadSpeed);
           }
         },
         cancelToken: onCancelToken!(CancelToken()),

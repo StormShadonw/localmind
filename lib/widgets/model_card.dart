@@ -35,10 +35,10 @@ class _ModelCardState extends State<ModelCard> {
     final path = await ModelDownloader.downloadModel(
       modelUrl: widget.model.url,
       modelName: widget.model.name,
-      onProgress: (progress, total) {
+      onProgress: (progress, total, speedText) {
         var progressPrc = (progress * 100).toStringAsFixed(2);
         dataProvider.setDownloadingModel(
-          "Downloadng model progress: $progressPrc%",
+          "Downloadng model progress: $progressPrc% at $speedText",
         );
         if (model.hardDriveSize == null) {
           setState(() {
