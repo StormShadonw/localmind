@@ -49,8 +49,7 @@ class ModelDownloader {
           final currentTime = DateTime.now();
 
           // Calcular el tiempo transcurrido en segundos
-          final timeElapsed =
-              currentTime.difference(startTime).inMilliseconds / 1000;
+          final timeElapsed = currentTime.difference(startTime).inSeconds;
 
           // Calcular los bytes descargados desde la última actualización
           final bytesDownloaded = received;
@@ -68,9 +67,6 @@ class ModelDownloader {
             speedText =
                 '${(downloadSpeed / (1024 * 1024)).toStringAsFixed(0)} MB/s';
           }
-
-          print('speedText: $speedText');
-          print('downloadSpeed: $downloadSpeed');
 
           if (total != -1 && onProgress != null) {
             onProgress(received / total, total.toDouble(), speedText);
