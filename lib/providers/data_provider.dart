@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:localmind/helpers/converters_helper.dart';
 import 'package:localmind/helpers/dis_space_helper.dart';
+import 'package:localmind/helpers/shared_preferences_helper.dart';
 import 'package:localmind/models/model.dart';
 import 'package:system_info3/system_info3.dart';
 
@@ -28,6 +29,14 @@ class DataProvider extends ChangeNotifier {
       downloadedPath: null,
     ),
   ];
+
+  Future<void> setModelDownloaded(String modelName, String path) async {
+    var model = models.firstWhere((element) => element.name == modelName);
+    model.downloaded = true;
+    model.downloadedPath = path;
+    await SharedPreferencesHelper.setValue(modelName, "$modelName:::$path");
+    notifyListeners();
+  }
 
   DataProvider.Init() {
     // hdAvailable = ConvertersHelper.bytesToGigabytes(

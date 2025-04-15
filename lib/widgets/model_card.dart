@@ -54,11 +54,6 @@ class _ModelCardState extends State<ModelCard> {
       onCancelToken: (p0) => cancelToken = p0,
     );
 
-    setState(() {
-      _isDownloading = false;
-      _localModelPath = path;
-    });
-
     if (path != null) {
       // Modelo descargado correctamente
       ScaffoldMessenger.of(context).showSnackBar(
@@ -71,6 +66,11 @@ class _ModelCardState extends State<ModelCard> {
           ),
         ),
       );
+      setState(() {
+        model.downloaded = true;
+        _isDownloading = false;
+      });
+      dataProvider.setModelDownloaded(model.name, path);
     } else {
       if (showDonwloadError) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -128,25 +128,23 @@ class _ModelCardState extends State<ModelCard> {
                         backgroundColor: Colors.blueGrey,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: Center(
-                        child: IconButton(
-                          onPressed: () {
-                            print("klk $cancelToken");
-                            if (cancelToken != null) {
-                              cancelToken!.cancel();
-                              setState(() {
-                                _isDownloading = false;
-                                showDonwloadError = false;
-                              });
-                              dataProvider.setDownloadingModel(
-                                "Not downloading any model",
-                              );
-                            }
-                          },
-                          icon: Icon(MdiIcons.downloadOff),
-                        ),
+                    Container(
+                      alignment: Alignment.center,
+                      child: IconButton(
+                        onPressed: () {
+                          if (cancelToken != null) {
+                            cancelToken!.cancel();
+                            setState(() {
+                              _isDownloading = false;
+                              showDonwloadError = false;
+                            });
+                            dataProvider.setDownloadingModel(
+                              "Not downloading any model",
+                            );
+                          }
+                        },
+                        icon: Icon(MdiIcons.downloadOff),
+                        iconSize: 20,
                       ),
                     ),
                   ],
@@ -157,8 +155,10 @@ class _ModelCardState extends State<ModelCard> {
                 height: 55,
                 padding: const EdgeInsets.all(6.0),
                 child: IconButton(
-                  onPressed: _downloadModel,
-                  icon: Icon(MdiIcons.download),
+                  onPressed: model.downloaded ? null : _downloadModel,
+                  icon: Icon(
+                    model.downloaded ? MdiIcons.check : MdiIcons.download,
+                  ),
                 ),
               ),
     );
