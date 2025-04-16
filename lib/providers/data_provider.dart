@@ -43,6 +43,17 @@ class DataProvider extends ChangeNotifier {
     //   SysInfo.,
     // );
 
+    print("validating models");
+    for (var model in models) {
+      SharedPreferencesHelper.getValue(model.name).then((value) {
+        print("sharedPreferencesValue $value");
+        if (value != null) {
+          model.downloadedPath = value.split(":::")[1];
+          model.downloaded = true;
+        }
+      });
+    }
+
     DiskSpaceHelper.getMemoryInfo().then((value) {
       print("Memory info: $value");
       ramAvailable =

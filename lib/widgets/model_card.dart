@@ -154,12 +154,13 @@ class _ModelCardState extends State<ModelCard> {
                 width: 55,
                 height: 55,
                 padding: const EdgeInsets.all(6.0),
-                child: IconButton(
-                  onPressed: model.downloaded ? null : _downloadModel,
-                  icon: Icon(
-                    model.downloaded ? MdiIcons.check : MdiIcons.download,
-                  ),
-                ),
+                child:
+                    model.downloaded
+                        ? Icon(MdiIcons.check)
+                        : IconButton(
+                          onPressed: model.downloaded ? null : _downloadModel,
+                          icon: Icon(MdiIcons.download),
+                        ),
               ),
     );
   }
