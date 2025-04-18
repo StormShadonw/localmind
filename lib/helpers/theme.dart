@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 
+const Color primaryColor = Color(0xFF3936b8);
+const Color secondaryColor = Color(0xFF094ebb);
+
+final inputBorderStyle = OutlineInputBorder(
+  borderRadius: BorderRadius.circular(100),
+  borderSide: const BorderSide(color: Colors.white, width: 1),
+);
+final inputErrorBorderStyle = OutlineInputBorder(
+  borderRadius: BorderRadius.circular(100),
+  borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+);
+
 final THEMEDATA = ThemeData(
   fontFamily: "Poppins",
   colorScheme: const ColorScheme(
     background: Colors.white,
     brightness: Brightness.light,
-    secondary: Color(0xFF094ebb),
-    primary: Color(0xFF3936b8),
+    secondary: secondaryColor,
+    primary: primaryColor,
     onPrimary: Colors.white,
     onSecondary: Colors.white,
     error: Colors.redAccent,
