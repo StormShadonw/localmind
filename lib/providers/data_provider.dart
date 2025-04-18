@@ -12,6 +12,7 @@ class DataProvider extends ChangeNotifier {
   double ramTotal = 0;
   double vramAvailable = 0;
   double hdAvailable = 0;
+  bool loadingModels = false;
   String get status =>
       "${mountedModel} - ${donwloadingModel} - Available RAM: ${ramAvailable.toStringAsFixed(2)} GB / ${ramTotal.toStringAsFixed(2)} GB - Available HD: ${hdAvailable.toStringAsFixed(2)} GB";
   List<Model> models = [
@@ -30,6 +31,11 @@ class DataProvider extends ChangeNotifier {
     ),
   ];
 
+  Future<void> setLoadingModels(bool value) async {
+    loadingModels = value;
+    notifyListeners();
+  }
+
   Future<void> setModelDownloaded(String modelName, String path) async {
     var model = models.firstWhere((element) => element.name == modelName);
     model.downloaded = true;
@@ -38,22 +44,30 @@ class DataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadModelsState() async {
+    try {
+      setLoadingModels(true);
+      print("validating models");
+      for (var model in models) {
+        var result = await SharedPreferencesHelper.getValue(model.name);
+        if (result != null) {
+          model.downloadedPath = result.split(":::")[1];
+          model.downloaded = true;
+        }
+      }
+      setLoadingModels(false);
+    } catch (e) {
+      setLoadingModels(false);
+      print("Error loadModelState: $e");
+    }
+  }
+
   DataProvider.Init() {
     // hdAvailable = ConvertersHelper.bytesToGigabytes(
     //   SysInfo.,
     // );
 
-    print("validating models");
-    for (var model in models) {
-      SharedPreferencesHelper.getValue(model.name).then((value) {
-        print("sharedPreferencesValue $value");
-        if (value != null) {
-          model.downloadedPath = value.split(":::")[1];
-          model.downloaded = true;
-        }
-      });
-    }
-
+    loadModelsState();
     DiskSpaceHelper.getMemoryInfo().then((value) {
       print("Memory info: $value");
       ramAvailable =
