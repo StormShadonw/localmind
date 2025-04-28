@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:localmind/helpers/errors.dart';
 import 'package:localmind/helpers/file_helpers.dart';
 import 'package:localmind/helpers/model_helper.dart';
@@ -31,23 +32,26 @@ class _ChatPageState extends State<ChatPage> {
   TextEditingController _chatController = TextEditingController();
   FocusNode? textFieldNode;
   List<Message> chat = [];
+  bool aiLoading = false;
+  final ScrollController _controller = ScrollController();
 
   void refreshChatsData(String content) {
     var sections = content.split("--------------------");
     for (String section in sections) {
-      var aiModelMessage = section.split("aiModel: ")[1];
-      var userMessage = section.split("aiModel: ")[0].replaceAll("user: ", "");
-      chat.add(Message(author: "user", message: userMessage));
-      chat.add(Message(author: "aiModel", message: aiModelMessage));
+      if (section.split("aiModel: ").length > 1) {
+        var aiModelMessage = section.split("aiModel: ")[1];
+        var userMessage = section
+            .split("aiModel: ")[0]
+            .replaceAll("user: ", "");
+        chat.add(Message(author: "user", message: userMessage));
+        chat.add(Message(author: "aiModel", message: aiModelMessage));
+      }
     }
     setState(() {});
   }
 
   Future<void> getChatData(String model) async {
-    setState(() {
-      isLodaing = true;
-    });
-
+    chat.clear();
     var validNameFile = model.replaceAll("/", "_");
 
     var fileContent = await FileHelper.getFileContent(
@@ -56,10 +60,7 @@ class _ChatPageState extends State<ChatPage> {
     if (fileContent != null) {
       refreshChatsData(fileContent);
     }
-
-    setState(() {
-      isLodaing = false;
-    });
+    _scrollDown();
   }
 
   Future<void> getInitData() async {
@@ -109,19 +110,44 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
   }
 
+  void _scrollDown() {
+    Future.delayed(const Duration(milliseconds: 100)).then(
+      (value) => _controller.animateTo(
+        _controller.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.fastOutSlowIn,
+      ),
+    );
+  }
+
   Future<void> sendMessage() async {
-    var message = _chatController.value.text;
-    if (modelSelected == null || modelSelected!.isEmpty) {
-      showError(context, "You need first to select a model");
-      return;
+    try {
+      var message = _chatController.value.text;
+      if (modelSelected == null || modelSelected!.isEmpty) {
+        showError(context, "You need first to select a model");
+        return;
+      }
+      if (message.isEmpty) {
+        showError(context, "You need first to type a text");
+        return;
+      }
+      setState(() {
+        aiLoading = true;
+      });
+      var result = await ModelHelper().runModel(modelSelected ?? "", message);
+      // await Future.delayed(const Duration(seconds: 15));
+      await getChatData(modelSelected ?? "");
+      setState(() {
+        aiLoading = false;
+      });
+      _scrollDown();
+      print("Model Result: $result");
+      _chatController.clear();
+    } catch (error) {
+      setState(() {
+        aiLoading = false;
+      });
     }
-    if (message.isEmpty) {
-      showError(context, "You need first to type a text");
-      return;
-    }
-    var result = await ModelHelper().runModel(modelSelected ?? "", message);
-    print("Model Result: $result");
-    _chatController.clear();
   }
 
   @override
@@ -270,10 +296,18 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                       child: ListView.builder(
                         itemCount: chat.length,
+                        controller: _controller,
                         itemBuilder:
                             (context, index) =>
                                 MessageWidget(message: chat[index]),
                       ),
+                    ),
+                  ),
+                if (aiLoading)
+                  Container(
+                    child: LoadingAnimationWidget.progressiveDots(
+                      color: Theme.of(context).colorScheme.primary,
+                      size: size.width * 0.03,
                     ),
                   ),
                 Container(
@@ -285,13 +319,14 @@ class _ChatPageState extends State<ChatPage> {
                       width: 2,
                     ),
                   ),
+                  margin: const EdgeInsets.only(bottom: 8),
                   width: size.width * 0.75,
-                  constraints: BoxConstraints(maxHeight: 115),
+                  constraints: BoxConstraints(maxHeight: 55),
                   child: TextFormField(
                     controller: _chatController,
-                    focusNode: textFieldNode,
+                    // focusNode: textFieldNode,
                     cursorColor: Colors.white,
-                    textInputAction: TextInputAction.newline,
+                    textInputAction: TextInputAction.done,
                     style: Theme.of(context).textTheme.bodyMedium,
                     maxLines: null,
                     textAlign: TextAlign.start,

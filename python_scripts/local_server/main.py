@@ -57,12 +57,21 @@ def main():
     
     # 4. Generar respuesta
     response = generate(model, tokenizer, prompt=prompt, verbose=False)
+
+    ai_response = ""
+
+    if "</think>" in response:
+    # Si contiene </think>, extraer solo la parte después del tag
+        ai_response = response.split("</think>")[1].strip()
+    else:
+    # Si no contiene el tag, usar la respuesta completa
+        ai_response = response.strip()
     
     # 5. Guardar la interacción completa
     os.makedirs(chats_dir, exist_ok=True)
     with open(chat_file, "a", encoding='utf-8') as file:
         file.write(f"user: {user_prompt}\n")
-        file.write(f"aiModel: {response.split("</think>")[1].strip()}\n")
+        file.write(f"aiModel: {ai_response}\n")
         file.write("-" * 20 + "\n")
     
     print(response)
