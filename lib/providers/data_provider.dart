@@ -17,10 +17,10 @@ class DataProvider extends ChangeNotifier {
       "${mountedModel} - ${donwloadingModel} - Available RAM: ${ramAvailable.toStringAsFixed(2)} GB / ${ramTotal.toStringAsFixed(2)} GB - Available HD: ${hdAvailable.toStringAsFixed(2)} GB";
   List<Model> models = [
     Model(
-      name: "deepseek-r1-distill-qwen-7b",
+      name: "mlx-community/DeepSeek-R1-Distill-Qwen-7B-4bit",
       url:
           "https://www.kaggle.com/api/v1/models/deepseek-ai/deepseek-r1/transformers/deepseek-r1-distill-qwen-7b/2/download",
-      description: "Uso General(deepseek-r1-distill-qwen-7b)",
+      description: "Uso General",
       author: "DeepSeek",
       advantages: "Generacion de texto",
       ramRequirements: 4,

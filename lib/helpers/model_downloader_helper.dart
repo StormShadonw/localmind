@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class ModelDownloader {
   static Future<String> get _modelsDir async {
@@ -89,8 +88,8 @@ class ModelDownloader {
 
   // Alternativa con cache
   static Future<String?> downloadWithCache(String modelUrl) async {
-    final file = await DefaultCacheManager().getSingleFile(modelUrl);
-    return file.path;
+    // final file = await DefaultCacheManager().getSingleFile(modelUrl);
+    // return file.path;
   }
 
   static Future<bool> modelExists(String modelName) async {

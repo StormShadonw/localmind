@@ -1,10 +1,18 @@
+import 'dart:io';
+
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:localmind/helpers/errors.dart';
+import 'package:localmind/helpers/file_helpers.dart';
+import 'package:localmind/helpers/model_helper.dart';
+import 'package:localmind/helpers/shared_preferences_helper.dart';
 import 'package:localmind/helpers/theme.dart';
+import 'package:localmind/models/message.dart';
 import 'package:localmind/providers/data_provider.dart';
+import 'package:localmind/widgets/message_widget.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class ChatPage extends StatefulWidget {
@@ -17,16 +25,53 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   String? modelSelected = null;
-  List<String> dropdownItems = [];
+  List<List<String>> dropdownItems = [];
   late DataProvider dataProvider;
   bool isLodaing = false;
   TextEditingController _chatController = TextEditingController();
   FocusNode? textFieldNode;
+  List<Message> chat = [];
+
+  void refreshChatsData(String content) {
+    var sections = content.split("--------------------");
+    for (String section in sections) {
+      var aiModelMessage = section.split("aiModel: ")[1];
+      var userMessage = section.split("aiModel: ")[0].replaceAll("user: ", "");
+      chat.add(Message(author: "user", message: userMessage));
+      chat.add(Message(author: "aiModel", message: aiModelMessage));
+    }
+    setState(() {});
+  }
+
+  Future<void> getChatData(String model) async {
+    setState(() {
+      isLodaing = true;
+    });
+
+    var validNameFile = model.replaceAll("/", "_");
+
+    var fileContent = await FileHelper.getFileContent(
+      "chats/$validNameFile.txt",
+    );
+    if (fileContent != null) {
+      refreshChatsData(fileContent);
+    }
+
+    setState(() {
+      isLodaing = false;
+    });
+  }
 
   Future<void> getInitData() async {
     setState(() {
       isLodaing = true;
     });
+
+    var model = await SharedPreferencesHelper.getValue("aiModelSelected");
+    if (model.isNotEmpty) {
+      modelSelected = model;
+      getChatData(modelSelected ?? "");
+    }
 
     setState(() {
       isLodaing = false;
@@ -74,7 +119,8 @@ class _ChatPageState extends State<ChatPage> {
       showError(context, "You need first to type a text");
       return;
     }
-    print("Message: $message");
+    var result = await ModelHelper().runModel(modelSelected ?? "", message);
+    print("Model Result: $result");
     _chatController.clear();
   }
 
@@ -93,7 +139,10 @@ class _ChatPageState extends State<ChatPage> {
               dropdownItems.addAll(
                 List.generate(
                   downloadedModels.length,
-                  (index) => downloadedModels[index].name,
+                  (index) => [
+                    downloadedModels[index].name,
+                    downloadedModels[index].description,
+                  ],
                 ),
               );
 
@@ -141,7 +190,7 @@ class _ChatPageState extends State<ChatPage> {
                                       // color:
                                       //     Theme.of(context).colorScheme.primary,
                                       child: Text(
-                                        downloadedModels[index].name,
+                                        downloadedModels[index].description,
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall!
@@ -175,23 +224,29 @@ class _ChatPageState extends State<ChatPage> {
                             items:
                                 dropdownItems
                                     .map<DropdownMenuItem<String>>(
-                                      (String item) => DropdownMenuItem<String>(
-                                        value: item,
+                                      (List<String> item) =>
+                                          DropdownMenuItem<String>(
+                                            value: item[0],
 
-                                        child: Text(
-                                          item,
+                                            child: Text(
+                                              item[1],
 
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall!
-                                              .copyWith(color: Colors.black87),
-                                        ),
-                                      ),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodySmall!.copyWith(
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ),
                                     )
                                     .toList(),
-                            onChanged:
-                                (String? value) =>
-                                    setState(() => modelSelected = value!),
+                            onChanged: (String? value) {
+                              SharedPreferencesHelper.setValue(
+                                "aiModelSelected",
+                                value ?? "",
+                              );
+                              setState(() => modelSelected = value!);
+                            },
                           ),
                         ),
                       ),
@@ -206,6 +261,21 @@ class _ChatPageState extends State<ChatPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.max,
               children: [
+                if (chat.isNotEmpty)
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
+                      ),
+                      child: ListView.builder(
+                        itemCount: chat.length,
+                        itemBuilder:
+                            (context, index) =>
+                                MessageWidget(message: chat[index]),
+                      ),
+                    ),
+                  ),
                 Container(
                   decoration: BoxDecoration(
                     // color: Theme.of(context).colorScheme.secondary,
@@ -220,7 +290,7 @@ class _ChatPageState extends State<ChatPage> {
                   child: TextFormField(
                     controller: _chatController,
                     focusNode: textFieldNode,
-
+                    cursorColor: Colors.white,
                     textInputAction: TextInputAction.newline,
                     style: Theme.of(context).textTheme.bodyMedium,
                     maxLines: null,
