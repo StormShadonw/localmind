@@ -11,9 +11,9 @@ import 'package:window_manager/window_manager.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  windowManager.ensureInitialized().then((value) async {
-    runApp(const MyApp());
-  });
+  runApp(const MyApp());
+  // windowManager.ensureInitialized().then((value) async {
+  // });
 }
 
 class MyApp extends StatefulWidget {

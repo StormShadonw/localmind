@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -160,7 +161,8 @@ class _ChatPageState extends State<ChatPage> {
           Text(widget.pageTitle, style: Theme.of(context).textTheme.titleLarge),
           Consumer<DataProvider>(
             builder: (context, value, child) {
-              var downloadedModels = value.models;
+              var downloadedModels =
+                  value.models.where((element) => element.downloaded).toList();
               dropdownItems.clear();
               dropdownItems.addAll(
                 List.generate(

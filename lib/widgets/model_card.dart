@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:localmind/helpers/converters_helper.dart';
 import 'package:localmind/helpers/model_downloader_helper.dart';
+import 'package:localmind/helpers/model_helper.dart';
 import 'package:localmind/models/model.dart';
 import 'package:localmind/providers/data_provider.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -32,29 +33,9 @@ class _ModelCardState extends State<ModelCard> {
     setState(() {
       showDonwloadError = true;
     });
-    final path = await ModelDownloader.downloadModel(
-      modelUrl: widget.model.url,
-      modelName: widget.model.name,
-      onProgress: (progress, total, speedText) {
-        var progressPrc = (progress * 100).toStringAsFixed(2);
-        dataProvider.setDownloadingModel(
-          "Downloadng model progress: $progressPrc% at $speedText",
-        );
-        if (model.hardDriveSize == null) {
-          setState(() {
-            model.hardDriveSize = ConvertersHelper.bytesToGigabytes(
-              total.toInt(),
-            );
-          });
-        }
-        setState(() {
-          _downloadProgress = progress;
-        });
-      },
-      onCancelToken: (p0) => cancelToken = p0,
-    );
+    final path = await ModelHelper.downloadModel(widget.model.name);
 
-    if (path != null) {
+    if (path == null) {
       // Modelo descargado correctamente
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -70,13 +51,13 @@ class _ModelCardState extends State<ModelCard> {
         model.downloaded = true;
         _isDownloading = false;
       });
-      dataProvider.setModelDownloaded(model.name, path);
+      dataProvider.setModelDownloaded(model.name);
     } else {
       if (showDonwloadError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Error al descargar el modelo',
+              'Error al descargar el modelo: $path',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall!.copyWith(color: Colors.black),

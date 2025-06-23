@@ -7,7 +7,7 @@ import 'package:shell/shell.dart';
 class ModelHelper {
   final Shell shell = Shell();
 
-  Future<Map<String, String>> _getFullEnvironment() async {
+  static Future<Map<String, String>> _getFullEnvironment() async {
     final shellEnv = await Process.run('env', [], runInShell: true);
     final lines = shellEnv.stdout.toString().split('\n');
     final env = <String, String>{};
@@ -22,7 +22,7 @@ class ModelHelper {
     return env;
   }
 
-  Future<String> _getPythonPath() async {
+  static Future<String> _getPythonPath() async {
     final which = await Process.run('which', ['python3']);
     if (which.exitCode != 0) {
       throw Exception(
@@ -56,6 +56,34 @@ class ModelHelper {
       ], environment: await _getFullEnvironment());
 
       return result.exitCode == 0 ? result.stdout : "Error: ${result.stderr}";
+    } catch (e) {
+      return "Error crítico: ${e.toString()}";
+    }
+  }
+
+  static Future<String?> downloadModel(String model) async {
+    try {
+      final pythonScriptFileName = "download_model.py";
+      // 1. Obtén rutas absolutas
+      final tempDir = await getApplicationDocumentsDirectory();
+      final scriptPath = '${tempDir.path}/$pythonScriptFileName';
+      final pythonPath = await _getPythonPath();
+
+      // 2. Copia el script
+      await rootBundle
+          .loadString('python_scripts/local_server/$pythonScriptFileName')
+          .then((content) => File(scriptPath).writeAsString(content));
+
+      // 3. Otorga permisos
+      await Process.run('chmod', ['+x', scriptPath]);
+
+      // 4. Ejecuta con entorno completo
+      final result = await Process.run(pythonPath, [
+        scriptPath,
+        model,
+      ], environment: await _getFullEnvironment());
+
+      return null;
     } catch (e) {
       return "Error crítico: ${e.toString()}";
     }

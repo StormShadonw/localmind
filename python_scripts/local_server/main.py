@@ -9,19 +9,16 @@ def load_chat_history(file_path):
         return []
     
     with open(file_path, "r", encoding='utf-8') as file:
-        lines = file.readlines()
-    
-    history = []
-    current_role = None
-    
-    for line in lines:
-        line = line.strip()
-        if line.startswith("user: "):
-            history.append({"role": "user", "content": line[6:]})
-        elif line.startswith("aiModel: "):
-            history.append({"role": "assistant", "content": line[9:]})
-        elif line == "-" * 20:
-            continue  # Ignorar separadores
+        content = file.read()
+
+        history = []
+        sections = content.split("--------------------")
+        for section in sections:
+            if (len(section.split("aiModel: ")) > 1) :
+                aiModelMessage = section.split("aiModel: ")[1]
+                userMessage = section.split("aiModel: ")[0].replace("user: ", "")
+                history.append({"role": "user", "content": userMessage})
+                history.append({"role": "aiModel", "content": aiModelMessage})
     
     return history
 
@@ -45,18 +42,20 @@ def main():
     # 1. Cargar historial previo
     chat_history = load_chat_history(chat_file)
     
+    
     # 2. Añadir el nuevo mensaje del usuario
     chat_history.append({"role": "user", "content": user_prompt})
     
     # 3. Generar prompt con todo el historial
     if tokenizer.chat_template:
-        prompt = tokenizer.apply_chat_template(chat_history, add_generation_prompt=True)
+        prompt = tokenizer.apply_chat_template(chat_history)
     else:
         # Si no hay chat_template, concatenar manualmente
         prompt = "\n".join([f"{msg['role']}: {msg['content']}" for msg in chat_history])
     
     # 4. Generar respuesta
     response = generate(model, tokenizer, prompt=prompt, verbose=False)
+    print(f"response: {response}")
 
     ai_response = ""
 

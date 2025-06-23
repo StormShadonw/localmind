@@ -29,6 +29,19 @@ class DataProvider extends ChangeNotifier {
       downloaded: false,
       downloadedPath: null,
     ),
+    Model(
+      name: "mlx-community/Mistral-Small-24B-Instruct-2501-4bit",
+      url:
+          "https://www.kaggle.com/api/v1/models/deepseek-ai/deepseek-r1/transformers/deepseek-r1-distill-qwen-7b/2/download",
+      description: "Uso General(Mistral)",
+      author: "Mistral",
+      advantages: "Generacion de texto",
+      ramRequirements: 4,
+      vramRequirements: 4,
+      hardDriveSize: null,
+      downloaded: false,
+      downloadedPath: null,
+    ),
   ];
 
   Future<void> setLoadingModels(bool value) async {
@@ -36,11 +49,10 @@ class DataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setModelDownloaded(String modelName, String path) async {
+  Future<void> setModelDownloaded(String modelName) async {
     var model = models.firstWhere((element) => element.name == modelName);
     model.downloaded = true;
-    model.downloadedPath = path;
-    await SharedPreferencesHelper.setValue(modelName, "$modelName:::$path");
+    await SharedPreferencesHelper.setValue(modelName, "$modelName:::1");
     notifyListeners();
   }
 
@@ -50,8 +62,7 @@ class DataProvider extends ChangeNotifier {
       print("validating models");
       for (var model in models) {
         var result = await SharedPreferencesHelper.getValue(model.name);
-        if (result != null) {
-          model.downloadedPath = result.split(":::")[1];
+        if (result.isNotEmpty) {
           model.downloaded = true;
         }
       }
