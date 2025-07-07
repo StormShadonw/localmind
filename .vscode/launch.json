@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter Web (Chrome Canary con Gemini Nano)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "env": {
+        "CHROME_EXECUTABLE": "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
+        "CHROME_OPTIONS": "--enable-features=OptimizationGuideOnDeviceModel:BypassPerfRequirement=true,PromptAPIForGeminiNano --flag-switches-begin --optimization-guide-on-device-model=enabled --prompt-api-for-gemini-nano=enabled --flag-switches-end"
+      },
+      "args": [
+        "--dart-define=ENABLE_EXPERIMENTAL_AI=true"
+      ]
+    }
+  ]
+}

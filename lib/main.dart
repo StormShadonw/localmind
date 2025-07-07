@@ -1,13 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:localmind/helpers/theme.dart';
 import 'package:localmind/providers/data_provider.dart';
 import 'package:localmind/providers/interface_provider.dart';
-import 'package:localmind/widgets/app_body_widget.dart';
+import 'package:localmind/widgets/app_body_web_widget.dart';
+import 'package:localmind/widgets/app_body_widget%20copy.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sidebarx/sidebarx.dart';
-import 'package:window_manager/window_manager.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -140,7 +141,7 @@ class _MyAppState extends State<MyApp> {
                               //           ""),
                             ],
                           ),
-                          AppBody(),
+                          kIsWeb ? AppBodyWeb() : const AppBody(),
                         ],
                       ),
                     ),

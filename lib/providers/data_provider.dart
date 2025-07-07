@@ -1,9 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:localmind/helpers/converters_helper.dart';
 import 'package:localmind/helpers/dis_space_helper.dart';
 import 'package:localmind/helpers/shared_preferences_helper.dart';
 import 'package:localmind/models/model.dart';
-import 'package:system_info3/system_info3.dart';
 
 class DataProvider extends ChangeNotifier {
   String mountedModel = "Not model mounted";
@@ -78,39 +78,42 @@ class DataProvider extends ChangeNotifier {
     //   SysInfo.,
     // );
 
-    loadModelsState();
-    DiskSpaceHelper.getMemoryInfo().then((value) {
-      print("Memory info: $value");
-      ramAvailable =
-          value == null
-              ? 0
-              : ConvertersHelper.bytesToGigabytes(
-                value == null
-                    ? 0
-                    // : (value["total"] as int) - (value["used"] as int),
-                    : (value["free"] as int),
-              );
-      ramTotal =
-          value == null
-              ? 0
-              : ConvertersHelper.bytesToGigabytes(
-                value == null
-                    ? 0
-                    // : (value["total"] as int) - (value["used"] as int),
-                    : (value["total"] as int),
-              );
-      notifyListeners();
-    });
+    if (!kIsWeb) {
+      loadModelsState();
+      DiskSpaceHelper.getMemoryInfo().then((value) {
+        print("Memory info: $value");
+        ramAvailable =
+            value == null
+                ? 0
+                : ConvertersHelper.bytesToGigabytes(
+                  value == null
+                      ? 0
+                      // : (value["total"] as int) - (value["used"] as int),
+                      : (value["free"] as int),
+                );
+        ramTotal =
+            value == null
+                ? 0
+                : ConvertersHelper.bytesToGigabytes(
+                  value == null
+                      ? 0
+                      // : (value["total"] as int) - (value["used"] as int),
+                      : (value["total"] as int),
+                );
+        notifyListeners();
+      });
 
-    DiskSpaceHelper.getFreeDiskSpace().then((value) {
-      hdAvailable =
-          value == null
-              ? 0
-              : ConvertersHelper.bytesToGigabytes(
-                value == null ? 0 : value.toInt(),
-              );
-      notifyListeners();
-    });
+      DiskSpaceHelper.getFreeDiskSpace().then((value) {
+        hdAvailable =
+            value == null
+                ? 0
+                : ConvertersHelper.bytesToGigabytes(
+                  value == null ? 0 : value.toInt(),
+                );
+        notifyListeners();
+      });
+    }
+
     notifyListeners();
   }
 

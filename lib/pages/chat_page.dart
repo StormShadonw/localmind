@@ -1,20 +1,19 @@
 import 'dart:async';
-import 'dart:io';
+// import 'package:localmind/helpers/js_interop.dart' as interop;
 
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:localmind/helpers/errors.dart';
 import 'package:localmind/helpers/file_helpers.dart';
-import 'package:localmind/helpers/model_helper.dart';
+import 'package:localmind/helpers/js_interop.dart';
 import 'package:localmind/helpers/shared_preferences_helper.dart';
 import 'package:localmind/helpers/theme.dart';
 import 'package:localmind/models/message.dart';
 import 'package:localmind/providers/data_provider.dart';
 import 'package:localmind/widgets/message_widget.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class ChatPage extends StatefulWidget {
@@ -53,14 +52,17 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> getChatData(String model) async {
     chat.clear();
-    var validNameFile = model.replaceAll("/", "_");
+    if (!kIsWeb) {
+      var validNameFile = model.replaceAll("/", "_");
 
-    var fileContent = await FileHelper.getFileContent(
-      "chats/$validNameFile.txt",
-    );
-    if (fileContent != null) {
-      refreshChatsData(fileContent);
-    }
+      var fileContent = await FileHelper.getFileContent(
+        "chats/$validNameFile.txt",
+      );
+      if (fileContent != null) {
+        refreshChatsData(fileContent);
+      }
+    } else {}
+
     _scrollDown();
   }
 
@@ -112,37 +114,42 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _scrollDown() {
-    Future.delayed(const Duration(milliseconds: 100)).then(
-      (value) => _controller.animateTo(
-        _controller.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.fastOutSlowIn,
-      ),
-    );
+    // Future.delayed(const Duration(milliseconds: 100)).then(
+    //   (value) => _controller.animateTo(
+    //     _controller.position.maxScrollExtent,
+    //     duration: const Duration(milliseconds: 500),
+    //     curve: Curves.fastOutSlowIn,
+    //   ),
+    // );
   }
 
   Future<void> sendMessage() async {
     try {
       var message = _chatController.value.text;
-      if (modelSelected == null || modelSelected!.isEmpty) {
-        showError(context, "You need first to select a model");
-        return;
-      }
-      if (message.isEmpty) {
-        showError(context, "You need first to type a text");
-        return;
-      }
+      print("klk!!!!!");
+      final sumResult = await myAppInterop.aiAvailabilityJS();
+
+      print("sumResult: $sumResult");
+
+      // if (modelSelected == null || modelSelected!.isEmpty) {
+      //   showError(context, "You need first to select a model");
+      //   return;
+      // }
+      // if (message.isEmpty) {
+      //   showError(context, "You need first to type a text");
+      //   return;
+      // }
       setState(() {
         aiLoading = true;
       });
-      var result = await ModelHelper().runModel(modelSelected ?? "", message);
-      // await Future.delayed(const Duration(seconds: 15));
-      await getChatData(modelSelected ?? "");
+      // var result = await ModelHelper().runModel(modelSelected ?? "", message);
+      // // await Future.delayed(const Duration(seconds: 15));
+      // await getChatData(modelSelected ?? "");
       setState(() {
         aiLoading = false;
       });
       _scrollDown();
-      print("Model Result: $result");
+      // print("Model Result: $result");
       _chatController.clear();
     } catch (error) {
       setState(() {
