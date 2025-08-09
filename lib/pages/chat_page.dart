@@ -13,6 +13,7 @@ import 'package:localmind/models/message.dart';
 import 'package:localmind/providers/data_provider.dart';
 import 'package:localmind/widgets/message_widget.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:ollama/ollama.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -67,6 +68,9 @@ class _ChatPageState extends State<ChatPage> {
     setState(() {
       isLodaing = true;
     });
+    try {} catch (e) {
+      print("pullModelStream e: $e");
+    }
 
     var model = await SharedPreferencesHelper.getValue("aiModelSelected");
     if (model.isNotEmpty) {
@@ -122,27 +126,48 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> sendMessage() async {
     try {
-      var message = _chatController.value.text;
-      if (modelSelected == null || modelSelected!.isEmpty) {
-        showError(context, "You need first to select a model");
-        return;
-      }
-      if (message.isEmpty) {
-        showError(context, "You need first to type a text");
-        return;
-      }
       setState(() {
         aiLoading = true;
       });
-      var result = await ModelHelper().runModel(modelSelected ?? "", message);
-      // await Future.delayed(const Duration(seconds: 15));
-      await getChatData(modelSelected ?? "");
+      var message = _chatController.value.text;
+      try {
+        final ollama = Ollama();
+        final stream = ollama.generate(
+          'Tell me a joke about programming',
+          model: 'llama3',
+        );
+
+        await for (final chunk in stream) {
+          print(chunk.message);
+        }
+      } catch (e) {
+        print("ai error: $e");
+      }
+
       setState(() {
         aiLoading = false;
       });
-      _scrollDown();
-      print("Model Result: $result");
-      _chatController.clear();
+      // var message = _chatController.value.text;
+      // if (modelSelected == null || modelSelected!.isEmpty) {
+      //   showError(context, "You need first to select a model");
+      //   return;
+      // }
+      // if (message.isEmpty) {
+      //   showError(context, "You need first to type a text");
+      //   return;
+      // }
+      // setState(() {
+      //   aiLoading = true;
+      // });
+      // var result = await ModelHelper().runModel(modelSelected ?? "", message);
+      // // await Future.delayed(const Duration(seconds: 15));
+      // await getChatData(modelSelected ?? "");
+      // setState(() {
+      //   aiLoading = false;
+      // });
+      // _scrollDown();
+      // print("Model Result: $result");
+      // _chatController.clear();
     } catch (error) {
       setState(() {
         aiLoading = false;
