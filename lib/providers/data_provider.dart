@@ -63,106 +63,105 @@ class DataProvider extends ChangeNotifier {
 
       // Initialize flutter_gemma (handled in main)
 
-      final isInstalled = await FlutterGemma.isModelInstalled(
-        'gemma-4-E4B-it.litertlm',
-      );
+      // Always call install() - it is idempotent. It skips download if the file exists
+      // but crucially it sets the model as 'active' in the plugin state.
+      downloadStatusText = "Initializing Local AI...";
+      notifyListeners();
 
-      if (!isInstalled) {
+      final totalBytes = 3654467584; // 3.4 GB estimate for progress tracking
+      final stopwatch = Stopwatch()..start();
+
+      await FlutterGemma.installModel(
+        modelType: ModelType.gemmaIt,
+      ).fromNetwork(modelUrl).withProgress((progress) {
+        // If progress is reported, we are actually downloading
         isDownloading = true;
         downloadStatusText = "Downloading Local AI Model";
-        notifyListeners();
 
-        final totalBytes = 3654467584; // 3.4 GB as detected from the URL
-        final stopwatch = Stopwatch()..start();
+        int currentBytes = 0;
+        double percentDouble = 0;
+        int? totalBytesFromObject;
 
-        await FlutterGemma.installModel(
-          modelType: ModelType.gemmaIt,
-        ).fromNetwork(modelUrl).withProgress((progress) {
-          int currentBytes = 0;
-          double percentDouble = 0;
-          int? totalBytesFromObject;
+        if (progress is int) {
+          percentDouble = progress / 100.0;
+          currentBytes = (totalBytes * percentDouble).toInt();
+        } else if (progress is double) {
+          percentDouble =
+              progress > 1.0 ? progress / 100.0 : progress.toDouble();
+          currentBytes = (totalBytes * percentDouble).toInt();
+        } else {
+          // Try to extract downloaded bytes and percentage from object dynamically
+          try {
+            final dp = progress as dynamic;
+            // Try common property names for bytes
+            currentBytes =
+                dp.downloaded?.toInt() ??
+                dp.receivedBytes?.toInt() ??
+                dp.bytesDownloaded?.toInt() ??
+                0;
 
-          if (progress is int) {
-            percentDouble = progress / 100.0;
-            currentBytes = (totalBytes * percentDouble).toInt();
-          } else if (progress is double) {
-            percentDouble =
-                progress > 1.0 ? progress / 100.0 : progress.toDouble();
-            currentBytes = (totalBytes * percentDouble).toInt();
-          } else {
-            // Try to extract downloaded bytes and percentage from object dynamically
-            try {
-              final dp = progress as dynamic;
-              // Try common property names for bytes
+            // Try common property names for total
+            totalBytesFromObject =
+                dp.totalSize?.toInt() ?? dp.totalBytes?.toInt();
+
+            // Try common property names for percentage
+            final p = dp.percentage ?? dp.progress;
+            if (p != null) {
+              percentDouble =
+                  p is double ? (p > 1.0 ? p / 100.0 : p) : p / 100.0;
+            }
+
+            // Fallback for currentBytes if still 0 but we have percentage
+            if (currentBytes == 0 && percentDouble > 0) {
               currentBytes =
-                  dp.downloaded?.toInt() ??
-                  dp.receivedBytes?.toInt() ??
-                  dp.bytesDownloaded?.toInt() ??
-                  0;
-
-              // Try common property names for total
-              totalBytesFromObject =
-                  dp.totalSize?.toInt() ?? dp.totalBytes?.toInt();
-
-              // Try common property names for percentage
-              final p = dp.percentage ?? dp.progress;
-              if (p != null) {
-                percentDouble =
-                    p is double ? (p > 1.0 ? p / 100.0 : p) : p / 100.0;
-              }
-
-              // Fallback for currentBytes if still 0 but we have percentage
-              if (currentBytes == 0 && percentDouble > 0) {
-                currentBytes =
-                    ((totalBytesFromObject ?? totalBytes) * percentDouble)
-                        .toInt();
-              }
-            } catch (e) {
-              // Final fallback to numeric logic if it's actually numeric but didn't match types above
-              if (progress is num) {
-                percentDouble =
-                    progress > 1.0 ? progress / 100.0 : progress.toDouble();
-                currentBytes = (totalBytes * percentDouble).toInt();
-              }
+                  ((totalBytesFromObject ?? totalBytes) * percentDouble)
+                      .toInt();
+            }
+          } catch (e) {
+            // Final fallback to numeric logic if it's actually numeric but didn't match types above
+            if (progress is num) {
+              percentDouble =
+                  progress > 1.0 ? progress / 100.0 : progress.toDouble();
+              currentBytes = (totalBytes * percentDouble).toInt();
             }
           }
+        }
 
-          final displayTotal = totalBytesFromObject ?? totalBytes;
+        final displayTotal = totalBytesFromObject ?? totalBytes;
 
-          // Always update these for immediate feedback
-          downloadProgress = (percentDouble * 100).toInt();
-          downloadProgressDouble = percentDouble * 100;
-          downloadedSizeText =
-              "${(currentBytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB";
-          totalSizeText =
-              "${(displayTotal / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB";
+        // Always update these for immediate feedback
+        downloadProgress = (percentDouble * 100).toInt();
+        downloadProgressDouble = percentDouble * 100;
+        downloadedSizeText =
+            "${(currentBytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB";
+        totalSizeText =
+            "${(displayTotal / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB";
 
-          final now = stopwatch.elapsedMilliseconds;
-          final timeDiff = now - _lastTime;
+        final now = stopwatch.elapsedMilliseconds;
+        final timeDiff = now - _lastTime;
 
-          if (timeDiff >= 500) {
-            final byteDiff = currentBytes - _lastBytes;
-            if (byteDiff > 0) {
-              final speedMBs = (byteDiff / (1024 * 1024)) / (timeDiff / 1000.0);
-              downloadSpeed = "${speedMBs.toStringAsFixed(2)} MB/s";
+        if (timeDiff >= 500) {
+          final byteDiff = currentBytes - _lastBytes;
+          if (byteDiff > 0) {
+            final speedMBs = (byteDiff / (1024 * 1024)) / (timeDiff / 1000.0);
+            downloadSpeed = "${speedMBs.toStringAsFixed(2)} MB/s";
 
-              // Only update baseline when we actually had a chunk to measure speed
-              _lastBytes = currentBytes;
-              _lastTime = now;
-            } else if (timeDiff >= 2000) {
-              // If 2 seconds passed without bytes, speed is 0
-              downloadSpeed = "0.00 MB/s";
-              _lastTime = now;
-              _lastBytes = currentBytes;
-            }
-          } else if (_lastTime == 0) {
+            // Only update baseline when we actually had a chunk to measure speed
             _lastBytes = currentBytes;
             _lastTime = now;
+          } else if (timeDiff >= 2000) {
+            // If 2 seconds passed without bytes, speed is 0
+            downloadSpeed = "0.00 MB/s";
+            _lastTime = now;
+            _lastBytes = currentBytes;
           }
-          notifyListeners();
-        }).install();
-        stopwatch.stop();
-      }
+        } else if (_lastTime == 0) {
+          _lastBytes = currentBytes;
+          _lastTime = now;
+        }
+        notifyListeners();
+      }).install();
+      stopwatch.stop();
 
       downloadStatusText = "Mounting model into memory...";
       isDownloading = false;
