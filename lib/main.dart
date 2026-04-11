@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:localmind/helpers/theme.dart';
 import 'package:localmind/providers/data_provider.dart';
@@ -10,8 +11,9 @@ import 'package:provider/provider.dart';
 import 'package:sidebarx/sidebarx.dart';
 import 'package:window_manager/window_manager.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await FlutterGemma.initialize();
   windowManager.ensureInitialized().then((value) async {
     runApp(const MyApp());
   });
@@ -159,7 +161,7 @@ class _MyAppState extends State<MyApp> {
                                 ), // Using theme color with opacity for glass effect
                                 child: Center(
                                   child: Container(
-                                    width: 400,
+                                    width: size.width * 0.45,
                                     padding: const EdgeInsets.all(30),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.05),
@@ -177,14 +179,49 @@ class _MyAppState extends State<MyApp> {
                                         const SizedBox(height: 20),
                                         Text(
                                           dataProvider.downloadStatusText,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleLarge
-                                              ?.copyWith(color: Colors.white),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.copyWith(
+                                            color: Colors.white,
+                                            height: 1.5,
+                                          ),
                                           textAlign: TextAlign.center,
                                         ),
                                         const SizedBox(height: 20),
-                                        if (dataProvider.isDownloading) ...[
+                                        if (dataProvider.hasError) ...[
+                                          const SizedBox(height: 20),
+                                          ElevatedButton.icon(
+                                            onPressed:
+                                                () =>
+                                                    dataProvider
+                                                        .retryInitialization(),
+                                            icon: Icon(MdiIcons.refresh),
+                                            label: const Text(
+                                              "Intentar nuevamente",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 32,
+                                                    vertical: 18,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                          ),
+                                        ] else if (dataProvider
+                                            .isDownloading) ...[
                                           LinearProgressIndicator(
                                             value:
                                                 dataProvider.downloadProgress /
@@ -196,11 +233,27 @@ class _MyAppState extends State<MyApp> {
                                             backgroundColor: Colors.white24,
                                           ),
                                           const SizedBox(height: 10),
-                                          Text(
-                                            "${dataProvider.downloadProgress}%",
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                            ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                "${dataProvider.downloadProgressDouble.toStringAsFixed(0)}%",
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                              if (dataProvider
+                                                  .totalSizeText
+                                                  .isNotEmpty)
+                                                Text(
+                                                  "${dataProvider.downloadedSizeText} / ${dataProvider.totalSizeText}",
+                                                  style: const TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ] else ...[
                                           CircularProgressIndicator(
