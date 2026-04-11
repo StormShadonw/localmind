@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:localmind/helpers/theme.dart';
@@ -143,6 +144,81 @@ class _MyAppState extends State<MyApp> {
                           AppBody(),
                         ],
                       ),
+                    ),
+                    Consumer<DataProvider>(
+                      builder: (context, dataProvider, child) {
+                        if (dataProvider.isModelReady)
+                          return const SizedBox.shrink();
+                        return Positioned.fill(
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                color: const Color(0xFF031734).withOpacity(
+                                  0.6,
+                                ), // Using theme color with opacity for glass effect
+                                child: Center(
+                                  child: Container(
+                                    width: 400,
+                                    padding: const EdgeInsets.all(30),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: Colors.white24),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          MdiIcons.brain,
+                                          size: 60,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Text(
+                                          dataProvider.downloadStatusText,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleLarge
+                                              ?.copyWith(color: Colors.white),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 20),
+                                        if (dataProvider.isDownloading) ...[
+                                          LinearProgressIndicator(
+                                            value:
+                                                dataProvider.downloadProgress /
+                                                100,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
+                                            backgroundColor: Colors.white24,
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            "${dataProvider.downloadProgress}%",
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                            ),
+                                          ),
+                                        ] else ...[
+                                          CircularProgressIndicator(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

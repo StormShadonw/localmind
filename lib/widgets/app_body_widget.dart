@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:localmind/pages/chat_page.dart';
-import 'package:localmind/pages/models_page.dart';
-import 'package:localmind/pages/test_page.dart';
 import 'package:localmind/providers/data_provider.dart';
 import 'package:localmind/providers/interface_provider.dart';
 import 'package:provider/provider.dart';
@@ -77,13 +75,6 @@ class _AppBodyState extends State<AppBody> with WindowListener {
                   switch (value.sidebarIndex) {
                     case 0:
                       return const ChatPage(pageTitle: "Chat");
-                    case 1:
-                      return const ModelsPage(pageTitle: "Models");
-                    // return ModelDownloadScreen(
-                    //   modelName: "testModelName",
-                    //   modelUrl:
-                    //       "https://www.dropbox.com/s/2i7m0t8w0o0m8d1/testModel.zip?dl=1",
-                    // );
                     default:
                       return const ChatPage(pageTitle: "Chat");
                   }
@@ -101,10 +92,10 @@ class _AppBodyState extends State<AppBody> with WindowListener {
                     color: Theme.of(context).colorScheme.secondary,
                   ),
                   child: Text(
-                    value.status,
+                    "Free HD: ${value.hdAvailable.toStringAsFixed(2)} GB | Free RAM: ${value.ramAvailable.toStringAsFixed(2)} GB",
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
                   ),
                 );
               },

@@ -1,20 +1,12 @@
-import 'dart:io';
-
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:localmind/helpers/errors.dart';
-import 'package:localmind/helpers/file_helpers.dart';
-import 'package:localmind/helpers/model_helper.dart';
-import 'package:localmind/helpers/shared_preferences_helper.dart';
 import 'package:localmind/helpers/theme.dart';
-import 'package:localmind/models/message.dart';
+import 'package:localmind/models/message.dart' as local;
 import 'package:localmind/providers/data_provider.dart';
 import 'package:localmind/widgets/message_widget.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:ollama/ollama.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class ChatPage extends StatefulWidget {
@@ -26,92 +18,25 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  String? modelSelected = null;
-  List<List<String>> dropdownItems = [];
   late DataProvider dataProvider;
-  bool isLodaing = false;
   TextEditingController _chatController = TextEditingController();
-  FocusNode? textFieldNode;
-  List<Message> chat = [];
+  List<local.Message> chat = [];
   bool aiLoading = false;
   final ScrollController _controller = ScrollController();
 
-  void refreshChatsData(String content) {
-    var sections = content.split("--------------------");
-    for (String section in sections) {
-      if (section.split("aiModel: ").length > 1) {
-        var aiModelMessage = section.split("aiModel: ")[1];
-        var userMessage = section
-            .split("aiModel: ")[0]
-            .replaceAll("user: ", "");
-        chat.add(Message(author: "user", message: userMessage));
-        chat.add(Message(author: "aiModel", message: aiModelMessage));
-      }
-    }
-    setState(() {});
-  }
-
-  Future<void> getChatData(String model) async {
-    chat.clear();
-    var validNameFile = model.replaceAll("/", "_");
-
-    var fileContent = await FileHelper.getFileContent(
-      "chats/$validNameFile.txt",
-    );
-    if (fileContent != null) {
-      refreshChatsData(fileContent);
-    }
-    _scrollDown();
-  }
-
-  Future<void> getInitData() async {
-    setState(() {
-      isLodaing = true;
-    });
-    try {} catch (e) {
-      print("pullModelStream e: $e");
-    }
-
-    var model = await SharedPreferencesHelper.getValue("aiModelSelected");
-    if (model.isNotEmpty) {
-      modelSelected = model;
-      getChatData(modelSelected ?? "");
-    }
-
-    setState(() {
-      isLodaing = false;
-    });
-  }
+  dynamic _activeGemmaChat;
 
   @override
   void initState() {
     dataProvider = Provider.of<DataProvider>(context, listen: false);
-    getInitData();
-    textFieldNode = FocusNode(
-      onKeyEvent: (node, event) {
-        final enterPressedWithoutShift =
-            event is KeyDownEvent &&
-            event.physicalKey == PhysicalKeyboardKey.enter &&
-            !HardwareKeyboard.instance.physicalKeysPressed.any(
-              (key) => <PhysicalKeyboardKey>{
-                PhysicalKeyboardKey.shiftLeft,
-                PhysicalKeyboardKey.shiftRight,
-              }.contains(key),
-            );
-
-        if (enterPressedWithoutShift) {
-          // Submit stuff
-          return KeyEventResult.handled;
-        } else if (event is KeyRepeatEvent) {
-          // Disable holding enter
-          return KeyEventResult.handled;
-        } else {
-          return KeyEventResult.ignored;
-        }
-      },
-    );
-
+    _initChat();
     super.initState();
+  }
+
+  Future<void> _initChat() async {
+    if (dataProvider.activeModel != null) {
+      _activeGemmaChat = await dataProvider.activeModel!.createChat();
+    }
   }
 
   void _scrollDown() {
@@ -125,187 +50,86 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> sendMessage() async {
+    var textMessage = _chatController.value.text.trim();
+    if (textMessage.isEmpty) return;
+
+    if (_activeGemmaChat == null && dataProvider.activeModel != null) {
+      await _initChat();
+    }
+
+    if (_activeGemmaChat == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("AI Model is still loading or unavailable."),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      chat.add(local.Message(author: "user", message: textMessage));
+      _chatController.clear();
+      aiLoading = true;
+      chat.add(
+        local.Message(author: "aiModel", message: ""),
+      ); // Start empty for stream
+    });
+    _scrollDown();
+
     try {
-      setState(() {
-        aiLoading = true;
-      });
-      var message = _chatController.value.text;
-      try {
-        final ollama = Ollama();
-        final stream = ollama.generate(
-          'Tell me a joke about programming',
-          model: 'llama3',
-        );
+      await _activeGemmaChat!.addQueryChunk(
+        gemma.Message.text(text: textMessage, isUser: true),
+      );
 
-        await for (final chunk in stream) {
-          print(chunk.message);
+      _activeGemmaChat!.generateChatResponseAsync().listen(
+        (gemma.ModelResponse response) {
+          if (response is gemma.TextResponse) {
+            setState(() {
+              if (chat.isNotEmpty && chat.last.author == "aiModel") {
+                chat.last.message += response.token;
+              }
+            });
+            _scrollDown();
+          }
+        },
+        onDone: () {
+          setState(() {
+            aiLoading = false;
+          });
+        },
+        onError: (error) {
+          setState(() {
+            aiLoading = false;
+            if (chat.isNotEmpty && chat.last.author == "aiModel") {
+              chat.last.message += "\n\n[Error generating response: $error]";
+            }
+          });
+          _scrollDown();
+        },
+      );
+    } catch (e) {
+      setState(() {
+        aiLoading = false;
+        if (chat.isNotEmpty && chat.last.author == "aiModel") {
+          chat.last.message += "\n\n[Exception: $e]";
         }
-      } catch (e) {
-        print("ai error: $e");
-      }
-
-      setState(() {
-        aiLoading = false;
       });
-      // var message = _chatController.value.text;
-      // if (modelSelected == null || modelSelected!.isEmpty) {
-      //   showError(context, "You need first to select a model");
-      //   return;
-      // }
-      // if (message.isEmpty) {
-      //   showError(context, "You need first to type a text");
-      //   return;
-      // }
-      // setState(() {
-      //   aiLoading = true;
-      // });
-      // var result = await ModelHelper().runModel(modelSelected ?? "", message);
-      // // await Future.delayed(const Duration(seconds: 15));
-      // await getChatData(modelSelected ?? "");
-      // setState(() {
-      //   aiLoading = false;
-      // });
-      // _scrollDown();
-      // print("Model Result: $result");
-      // _chatController.clear();
-    } catch (error) {
-      setState(() {
-        aiLoading = false;
-      });
+      _scrollDown();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
-    GlobalKey dropdownKey = GlobalKey();
     return Container(
       child: Column(
         children: [
-          Text(widget.pageTitle, style: Theme.of(context).textTheme.titleLarge),
-          Consumer<DataProvider>(
-            builder: (context, value, child) {
-              var downloadedModels = value.models;
-              dropdownItems.clear();
-              dropdownItems.addAll(
-                List.generate(
-                  downloadedModels.length,
-                  (index) => [
-                    downloadedModels[index].name,
-                    downloadedModels[index].description,
-                  ],
-                ),
-              );
-
-              return Container(
-                margin: const EdgeInsets.symmetric(vertical: 5),
-                // color: Colors.red,
-                // padding: EdgeInsets.symmetric(horizontal: size.width * 0.1),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "model:",
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    SizedBox(width: 10),
-                    Container(
-                      width: size.width * 0.75,
-                      child: DecoratedBox(
-                        decoration: ShapeDecoration(
-                          color: Theme.of(context).colorScheme.secondary,
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(
-                              width: 1.0,
-                              style: BorderStyle.solid,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(25.0),
-                            ),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 5),
-                          child: DropdownButton2(
-                            iconStyleData: IconStyleData(
-                              iconEnabledColor: Colors.white,
-                            ),
-                            selectedItemBuilder:
-                                (context) => List.generate(
-                                  downloadedModels.length,
-                                  (index) => DropdownMenuItem(
-                                    value: downloadedModels[index].name,
-
-                                    child: Container(
-                                      // color:
-                                      //     Theme.of(context).colorScheme.primary,
-                                      child: Text(
-                                        downloadedModels[index].description,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall!
-                                            .copyWith(color: Colors.white),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            dropdownStyleData: DropdownStyleData(
-                              maxHeight: 200,
-
-                              decoration: BoxDecoration(
-                                // color: Theme.of(context).colorScheme.secondary,
-                                borderRadius: BorderRadius.circular(100),
-                              ),
-                            ),
-                            key: dropdownKey,
-
-                            menuItemStyleData: MenuItemStyleData(height: 15),
-                            underline: const SizedBox(),
-                            isExpanded: true,
-
-                            isDense: true,
-                            hint: Text(
-                              'Select a model',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            style: Theme.of(context).textTheme.bodySmall!
-                                .copyWith(color: Colors.white),
-                            value: modelSelected,
-                            items:
-                                dropdownItems
-                                    .map<DropdownMenuItem<String>>(
-                                      (List<String> item) =>
-                                          DropdownMenuItem<String>(
-                                            value: item[0],
-
-                                            child: Text(
-                                              item[1],
-
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.bodySmall!.copyWith(
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                          ),
-                                    )
-                                    .toList(),
-                            onChanged: (String? value) {
-                              SharedPreferencesHelper.setValue(
-                                "aiModelSelected",
-                                value ?? "",
-                              );
-                              setState(() => modelSelected = value!);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            child: Text(
+              widget.pageTitle,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
           Expanded(
             child: Column(
@@ -330,6 +154,7 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 if (aiLoading)
                   Container(
+                    margin: const EdgeInsets.only(bottom: 10),
                     child: LoadingAnimationWidget.progressiveDots(
                       color: Theme.of(context).colorScheme.primary,
                       size: size.width * 0.03,
@@ -337,7 +162,6 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 Container(
                   decoration: BoxDecoration(
-                    // color: Theme.of(context).colorScheme.secondary,
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(
                       color: Theme.of(context).colorScheme.primary,
@@ -346,10 +170,9 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                   margin: const EdgeInsets.only(bottom: 8),
                   width: size.width * 0.75,
-                  constraints: BoxConstraints(maxHeight: 55),
+                  constraints: const BoxConstraints(maxHeight: 55),
                   child: TextFormField(
                     controller: _chatController,
-                    // focusNode: textFieldNode,
                     cursorColor: Colors.white,
                     textInputAction: TextInputAction.done,
                     style: Theme.of(context).textTheme.bodyMedium,
@@ -357,17 +180,15 @@ class _ChatPageState extends State<ChatPage> {
                     textAlign: TextAlign.start,
                     textAlignVertical: TextAlignVertical.center,
                     expands: true,
-                    onEditingComplete: sendMessage,
-
+                    onFieldSubmitted: (_) => sendMessage(),
                     decoration: InputDecoration(
                       suffixIcon: Transform.translate(
-                        offset: Offset(-10, 0),
+                        offset: const Offset(-10, 0),
                         child: IconButton(
                           onPressed: sendMessage,
                           icon: Icon(MdiIcons.sendVariant),
                         ),
                       ),
-
                       isCollapsed: true,
                       filled: true,
                       fillColor: Theme.of(context).colorScheme.secondary,
@@ -376,7 +197,6 @@ class _ChatPageState extends State<ChatPage> {
                         horizontal: 35,
                         vertical: 8,
                       ),
-
                       hintText: "Type something...",
                       border: inputBorderStyle,
                       enabledBorder: inputBorderStyle,
