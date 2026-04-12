@@ -81,25 +81,6 @@ class _AppBodyState extends State<AppBody> with WindowListener {
                 },
               ),
             ),
-            Consumer<DataProvider>(
-              builder: (context, value, child) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  width: size.width,
-                  height: size.height * 0.05,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  child: Text(
-                    "Free HD: ${value.hdAvailable.toStringAsFixed(2)} GB | Free RAM: ${value.ramAvailable.toStringAsFixed(2)} GB",
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ),

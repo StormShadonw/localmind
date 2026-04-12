@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:localmind/helpers/theme.dart';
@@ -8,6 +7,7 @@ import 'package:localmind/providers/data_provider.dart';
 import 'package:localmind/widgets/message_widget.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, required this.pageTitle});
@@ -19,10 +19,10 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   late DataProvider dataProvider;
-  TextEditingController _chatController = TextEditingController();
+  final TextEditingController _chatController = TextEditingController();
   List<local.Message> chat = [];
   bool aiLoading = false;
-  final ScrollController _controller = ScrollController();
+  final ScrollController _scrollController = ScrollController();
 
   dynamic _activeGemmaChat;
 
@@ -40,13 +40,15 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _scrollDown() {
-    Future.delayed(const Duration(milliseconds: 100)).then(
-      (value) => _controller.animateTo(
-        _controller.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.fastOutSlowIn,
-      ),
-    );
+    if (_scrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100)).then(
+        (value) => _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOutCirc,
+        ),
+      );
+    }
   }
 
   Future<void> sendMessage() async {
@@ -70,9 +72,7 @@ class _ChatPageState extends State<ChatPage> {
       chat.add(local.Message(author: "user", message: textMessage));
       _chatController.clear();
       aiLoading = true;
-      chat.add(
-        local.Message(author: "aiModel", message: ""),
-      ); // Start empty for stream
+      chat.add(local.Message(author: "aiModel", message: ""));
     });
     _scrollDown();
 
@@ -121,96 +121,128 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
-    return Container(
-      child: Column(
+    var colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text(widget.pageTitle, textAlign: TextAlign.start),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            child: Text(
-              widget.pageTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                if (chat.isNotEmpty)
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 16,
-                      ),
-                      child: ListView.builder(
-                        itemCount: chat.length,
-                        controller: _controller,
-                        itemBuilder:
-                            (context, index) =>
-                                MessageWidget(message: chat[index]),
-                      ),
-                    ),
+          Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.only(
+                    top: 20,
+                    bottom: 150, // Space for the floating input
+                    left: 20,
+                    right: 20,
                   ),
-                if (aiLoading)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: LoadingAnimationWidget.progressiveDots(
-                      color: Theme.of(context).colorScheme.primary,
-                      size: size.width * 0.03,
-                    ),
-                  ),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  margin: const EdgeInsets.only(bottom: 8),
-                  width: size.width * 0.75,
-                  constraints: const BoxConstraints(maxHeight: 55),
-                  child: TextFormField(
-                    controller: _chatController,
-                    cursorColor: Colors.white,
-                    textInputAction: TextInputAction.done,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    maxLines: null,
-                    textAlign: TextAlign.start,
-                    textAlignVertical: TextAlignVertical.center,
-                    expands: true,
-                    onFieldSubmitted: (_) => sendMessage(),
-                    decoration: InputDecoration(
-                      suffixIcon: Transform.translate(
-                        offset: const Offset(-10, 0),
-                        child: IconButton(
-                          onPressed: sendMessage,
-                          icon: Icon(MdiIcons.sendVariant),
-                        ),
-                      ),
-                      isCollapsed: true,
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.secondary,
-                      focusColor: Theme.of(context).colorScheme.primary,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 35,
-                        vertical: 8,
-                      ),
-                      hintText: "Type something...",
-                      border: inputBorderStyle,
-                      enabledBorder: inputBorderStyle,
-                      focusedBorder: inputBorderStyle,
-                      disabledBorder: inputBorderStyle,
-                      errorBorder: inputErrorBorderStyle,
-                      focusedErrorBorder: inputErrorBorderStyle,
-                    ),
-                  ),
+                  itemCount: chat.length,
+                  itemBuilder:
+                      (context, index) => MessageWidget(message: chat[index]),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildInputBar(context, size),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInputBar(BuildContext context, Size size) {
+    var colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            colorScheme.background.withOpacity(0),
+            colorScheme.background.withOpacity(0.8),
+            colorScheme.background,
+          ],
+          stops: const [0, 0.4, 1],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _chatController,
+                          cursorColor: colorScheme.primary,
+                          maxLines: 5,
+                          minLines: 1,
+                          textInputAction: TextInputAction.send,
+                          onFieldSubmitted: (_) => sendMessage(),
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          decoration: InputDecoration(
+                            hintText: "Escribe algo para comenzar...",
+                            hintStyle: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.white30),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      if (aiLoading)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: LoadingAnimationWidget.staggeredDotsWave(
+                            color: colorScheme.primary,
+                            size: 24,
+                          ),
+                        )
+                      else
+                        IconButton(
+                          onPressed: sendMessage,
+                          icon: Icon(
+                            MdiIcons.sendVariant,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

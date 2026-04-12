@@ -1,77 +1,59 @@
 import 'package:flutter/material.dart';
 
-const Color primaryColor = Color(0xFF3936b8);
-const Color secondaryColor = Color(0xFF094ebb);
+const Color backgroundColor = Color(0xFF0D0D0E);
+const Color surfaceColor = Color(0xFF1A1A1C);
+const Color primaryColor = Color(0xFF7D8BFF);
+const Color accentColor = Color(0xFFA682FF);
+const Color textColor = Colors.white;
+const Color secondaryTextColor = Color(0xFFA1A1AA);
 
 final inputBorderStyle = OutlineInputBorder(
-  borderRadius: BorderRadius.circular(100),
-  borderSide: const BorderSide(color: Colors.white, width: 1),
+  borderRadius: BorderRadius.circular(16),
+  borderSide: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
 );
+
 final inputErrorBorderStyle = OutlineInputBorder(
-  borderRadius: BorderRadius.circular(100),
-  borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+  borderRadius: BorderRadius.circular(16),
+  borderSide: const BorderSide(color: Colors.redAccent, width: 1),
 );
 
 final THEMEDATA = ThemeData(
   fontFamily: "Poppins",
-  colorScheme: const ColorScheme(
-    background: Colors.white,
-    brightness: Brightness.light,
-    secondary: secondaryColor,
+  brightness: Brightness.dark,
+  scaffoldBackgroundColor: backgroundColor,
+  colorScheme: const ColorScheme.dark(
+    background: backgroundColor,
+    surface: surfaceColor,
     primary: primaryColor,
+    secondary: accentColor,
     onPrimary: Colors.white,
     onSecondary: Colors.white,
+    onBackground: textColor,
+    onSurface: textColor,
     error: Colors.redAccent,
     onError: Colors.white,
-    onBackground: Colors.black87,
-    surface: Colors.white,
-    onSurface: Colors.white,
   ),
   textTheme: const TextTheme(
-    bodyMedium: TextStyle(
-      fontSize: 14,
-      // fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-    bodySmall: TextStyle(
-      fontSize: 10,
-      // fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-    bodyLarge: TextStyle(
-      fontSize: 18,
-      // fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
+    bodyLarge: TextStyle(fontSize: 16, color: textColor, height: 1.5),
+    bodyMedium: TextStyle(fontSize: 14, color: textColor, height: 1.5),
+    bodySmall: TextStyle(fontSize: 12, color: secondaryTextColor),
     titleLarge: TextStyle(
-      fontFamily: "Poppins",
       fontSize: 24,
-      // fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-    displayMedium: TextStyle(
-      fontFamily: "Poppins",
-      fontSize: 14,
-      fontWeight: FontWeight.normal,
-      color: Colors.white,
-    ),
-    displayLarge: TextStyle(
-      fontFamily: "Poppins",
-      fontSize: 20,
-      fontWeight: FontWeight.normal,
-      color: Colors.white,
-    ),
-    displaySmall: TextStyle(
-      fontFamily: "Poppins",
-      fontSize: 12,
-      fontWeight: FontWeight.normal,
-      color: Colors.white,
+      fontWeight: FontWeight.w600,
+      color: textColor,
+      letterSpacing: -0.5,
     ),
     titleMedium: TextStyle(
-      fontSize: 22,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
+      fontSize: 18,
+      fontWeight: FontWeight.w500,
+      color: textColor,
     ),
+    displaySmall: TextStyle(fontSize: 12, color: secondaryTextColor),
+  ),
+  cardTheme: CardThemeData(
+    color: surfaceColor,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    elevation: 0,
   ),
   useMaterial3: true,
 );

@@ -27,7 +27,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
@@ -51,228 +50,102 @@ class _MyAppState extends State<MyApp> {
                 height: size.height,
                 child: Stack(
                   children: [
-                    Container(
-                      child: Image.asset("assets/images/app_background.png"),
+                    // Background layer with subtle overlay
+                    Positioned.fill(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Image.asset(
+                              "assets/images/app_background.png",
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Container(
+                              color: backgroundColor.withOpacity(0.85),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     Container(
-                      // width: size.width,
-                      // height: size.height,
                       child: Row(
                         children: [
                           SidebarX(
                             controller: interfaceProvider.sidebarController,
                             showToggleButton: size.width < 615 ? false : true,
-
-                            // footerDivider: const Divider(),
-                            // footerBuilder:
-                            //     (context, extended) => Padding(
-                            //       padding: const EdgeInsets.symmetric(
-                            //         vertical: 15,
-                            //         horizontal: 10,
-                            //       ),
-                            //       child: Column(
-                            //         mainAxisAlignment: MainAxisAlignment.end,
-                            //         crossAxisAlignment:
-                            //             CrossAxisAlignment.center,
-                            //         children: [
-                            //           !interfaceProvider
-                            //                   .sidebarController
-                            //                   .extended
-                            //               ? IconButton(
-                            //                 onPressed: () {},
-                            //                 icon: Icon(MdiIcons.logout),
-                            //               )
-                            //               : ElevatedButton.icon(
-                            //                 icon: Icon(MdiIcons.logout),
-                            //                 label: const Text("Cerrar sesión"),
-                            //                 onPressed: () {},
-                            //               ),
-                            //         ],
-                            //       ),
-                            //     ),
                             theme: SidebarXTheme(
-                              decoration: BoxDecoration(color: Colors.white),
-                            ),
-                            extendedTheme: SidebarXTheme(
-                              width:
-                                  size.width * 0.20 > 225
-                                      ? 225
-                                      : size.width * 0.20,
-                              textStyle: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(color: Colors.black87),
-
-                              decoration: BoxDecoration(color: Colors.white),
-                            ),
-                            headerBuilder:
-                                (context, extended) => Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 25,
-                                    left: 10,
-                                    right: 10,
-                                  ),
-                                  child: FittedBox(
-                                    child:
-                                        Image.asset(
-                                          "assets/images/app_${interfaceProvider.sidebarController.extended ? "logo" : "icon"}.png",
-                                        ).animate().fadeIn(),
+                              width: 70,
+                              decoration: BoxDecoration(
+                                color: surfaceColor,
+                                border: Border(
+                                  right: BorderSide(
+                                    color: Colors.white.withOpacity(0.05),
                                   ),
                                 ),
+                              ),
+                              textStyle: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: secondaryTextColor),
+                              selectedTextStyle: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white),
+                              itemPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              selectedItemPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              itemMargin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              selectedItemMargin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              itemTextPadding: const EdgeInsets.only(left: 15),
+                              selectedItemTextPadding: const EdgeInsets.only(left: 15),
+                              iconTheme: IconThemeData(
+                                color: secondaryTextColor,
+                                size: 20,
+                              ),
+                              selectedIconTheme: IconThemeData(
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              selectedItemDecoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: primaryColor.withOpacity(0.1),
+                                border: Border.all(
+                                  color: primaryColor.withOpacity(0.2),
+                                ),
+                              ),
+                            ),
+                            extendedTheme: SidebarXTheme(
+                              width: size.width * 0.20 > 225 ? 225 : size.width * 0.20,
+                              decoration: BoxDecoration(
+                                color: surfaceColor,
+                                border: Border(
+                                  right: BorderSide(
+                                    color: Colors.white.withOpacity(0.05),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            headerBuilder: (context, extended) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                              child: Image.asset(
+                                "assets/images/app_${interfaceProvider.sidebarController.extended ? "logo" : "icon"}.png",
+                                height: 40,
+                              ).animate().fadeIn(),
+                            ),
                             items: [
                               SidebarXItem(
-                                icon: MdiIcons.home,
+                                icon: MdiIcons.chat,
                                 label: "Chat",
-                                onTap:
-                                    () => interfaceProvider.setSidebarIndex(0),
+                                onTap: () => interfaceProvider.setSidebarIndex(0),
                               ),
                               SidebarXItem(
-                                icon: MdiIcons.faceAgent,
-                                label: "Models",
-
-                                onTap:
-                                    () => interfaceProvider.setSidebarIndex(1),
+                                icon: MdiIcons.viewGridPlus,
+                                label: "Modelos",
+                                onTap: () => interfaceProvider.setSidebarIndex(1),
                               ),
-
-                              // SidebarXItem(
-                              //   icon: MdiIcons.sale,
-                              //   label: "Subastas",
-                              // ),
-                              // if (dataProvider.user!.administrator == "1")
-                              //   SidebarXItem(
-                              //       icon: MdiIcons.poll,
-                              //       label: value.languageDictionary[value.language]!["sideBar10"] ??
-                              //           ""),
                             ],
                           ),
-                          AppBody(),
+                          Expanded(child: AppBody()),
                         ],
                       ),
                     ),
-                    Consumer<DataProvider>(
-                      builder: (context, dataProvider, child) {
-                        if (dataProvider.isModelReady)
-                          return const SizedBox.shrink();
-                        return Positioned.fill(
-                          child: ClipRect(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                color: const Color(0xFF031734).withOpacity(
-                                  0.6,
-                                ), // Using theme color with opacity for glass effect
-                                child: Center(
-                                  child: Container(
-                                    width: size.width * 0.45,
-                                    padding: const EdgeInsets.all(30),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.white24),
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          MdiIcons.brain,
-                                          size: 60,
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Text(
-                                          dataProvider.downloadStatusText,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.copyWith(
-                                            color: Colors.white,
-                                            height: 1.5,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        const SizedBox(height: 20),
-                                        if (dataProvider.hasError) ...[
-                                          const SizedBox(height: 20),
-                                          ElevatedButton.icon(
-                                            onPressed:
-                                                () =>
-                                                    dataProvider
-                                                        .retryInitialization(),
-                                            icon: Icon(MdiIcons.refresh),
-                                            label: const Text(
-                                              "Intentar nuevamente",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.primary,
-                                              foregroundColor: Colors.white,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 32,
-                                                    vertical: 18,
-                                                  ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                            ),
-                                          ),
-                                        ] else if (dataProvider
-                                            .isDownloading) ...[
-                                          LinearProgressIndicator(
-                                            value:
-                                                dataProvider.downloadProgress /
-                                                100,
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.primary,
-                                            backgroundColor: Colors.white24,
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                "${dataProvider.downloadProgressDouble.toStringAsFixed(0)}%",
-                                                style: const TextStyle(
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
-                                              if (dataProvider
-                                                  .totalSizeText
-                                                  .isNotEmpty)
-                                                Text(
-                                                  "${dataProvider.downloadedSizeText} / ${dataProvider.totalSizeText}",
-                                                  style: const TextStyle(
-                                                    color: Colors.white70,
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ] else ...[
-                                          CircularProgressIndicator(
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.primary,
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    _buildDownloadOverlay(context, size),
                   ],
                 ),
               ),
@@ -281,6 +154,109 @@ class _MyAppState extends State<MyApp> {
         ),
         debugShowCheckedModeBanner: false,
       ),
+    );
+  }
+
+  Widget _buildDownloadOverlay(BuildContext context, Size size) {
+    return Consumer<DataProvider>(
+      builder: (context, dataProvider, child) {
+        if (dataProvider.isModelReady) return const SizedBox.shrink();
+        
+        return Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              color: backgroundColor.withOpacity(0.7),
+              child: Center(
+                child: Container(
+                  width: 400,
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 40,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          MdiIcons.brain,
+                          size: 48,
+                          color: primaryColor,
+                        ),
+                      ).animate(onPlay: (controller) => controller.repeat())
+                       .shimmer(duration: 2.seconds, color: primaryColor.withOpacity(0.3)),
+                      const SizedBox(height: 32),
+                      Text(
+                        dataProvider.downloadStatusText,
+                        style: Theme.of(context).textTheme.titleMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      if (dataProvider.hasError) ...[
+                        ElevatedButton.icon(
+                          onPressed: () => dataProvider.retryInitialization(),
+                          icon: Icon(MdiIcons.refresh),
+                          label: const Text("Intentar nuevamente"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ] else if (dataProvider.isDownloading) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: dataProvider.downloadProgress / 100,
+                            minHeight: 8,
+                            backgroundColor: Colors.white.withOpacity(0.05),
+                            valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "${dataProvider.downloadProgressDouble.toStringAsFixed(1)}%",
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: primaryColor),
+                            ),
+                            if (dataProvider.totalSizeText.isNotEmpty)
+                              Text(
+                                "${dataProvider.downloadedSizeText} / ${dataProvider.totalSizeText}",
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                          ],
+                        ),
+                      ] else ...[
+                        CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
