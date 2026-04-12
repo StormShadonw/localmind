@@ -10,11 +10,18 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:provider/provider.dart';
 import 'package:sidebarx/sidebarx.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:localmind/helpers/process_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Cleanup any old orphaned instances before starting
+  await ProcessHelper.cleanupOldGemmaInstances();
+  
   await FlutterGemma.initialize();
   windowManager.ensureInitialized().then((value) async {
+    // Set up window closing interception
+    await windowManager.setPreventClose(true);
     runApp(const MyApp());
   });
 }
@@ -26,7 +33,27 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WindowListener {
+  @override
+  void initState() {
+    super.initState();
+    windowManager.addListener(this);
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    // Cleanup instances when the window is closed
+    await ProcessHelper.cleanupOldGemmaInstances();
+    // Effectively close the window
+    await windowManager.destroy();
+  }
+
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
