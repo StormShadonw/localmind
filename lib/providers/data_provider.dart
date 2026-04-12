@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:localmind/helpers/converters_helper.dart';
 import 'package:localmind/helpers/dis_space_helper.dart';
+import 'package:localmind/models/message.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DataProvider extends ChangeNotifier {
+  List<LocalMessage> chatMessages = [];
   double ramAvailable = 0;
   double ramTotal = 0;
   double hdAvailable = 0;
@@ -25,6 +29,49 @@ class DataProvider extends ChangeNotifier {
   DataProvider.Init() {
     _loadSystemInfo();
     _initGemmaModel();
+    _loadChatMessages();
+  }
+
+  Future<void> _loadChatMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? chatJson = prefs.getString('chat_history');
+    if (chatJson != null) {
+      final List<dynamic> decoded = jsonDecode(chatJson);
+      chatMessages = decoded.map((m) => LocalMessage.fromMap(m)).toList();
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveChatMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String chatJson = jsonEncode(
+      chatMessages.map((m) => m.toMap()).toList(),
+    );
+    await prefs.setString('chat_history', chatJson);
+  }
+
+  void addChatMessage(LocalMessage message) {
+    chatMessages.add(message);
+    notifyListeners();
+    _saveChatMessages();
+  }
+
+  void updateLastChatMessage(String token) {
+    if (chatMessages.isNotEmpty && chatMessages.last.author == "aiModel") {
+      chatMessages.last.message += token;
+      notifyListeners();
+      // We don't save on every token for performance, only on complete or manual trigger
+    }
+  }
+
+  void finishStreamingResponse() {
+    _saveChatMessages();
+  }
+
+  void clearChat() {
+    chatMessages.clear();
+    notifyListeners();
+    _saveChatMessages();
   }
 
   Future<void> _loadSystemInfo() async {

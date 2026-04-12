@@ -5,7 +5,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 class MessageWidget extends StatelessWidget {
   const MessageWidget({super.key, required this.message});
-  final Message message;
+  final LocalMessage message;
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +24,10 @@ class MessageWidget extends StatelessWidget {
           const SizedBox(width: 12),
           Flexible(
             child: Column(
-              crossAxisAlignment: isUserMessage
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isUserMessage
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(

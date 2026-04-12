@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:localmind/helpers/theme.dart';
 import 'package:localmind/models/message.dart' as local;
 import 'package:localmind/providers/data_provider.dart';
 import 'package:localmind/widgets/message_widget.dart';
@@ -20,7 +19,6 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   late DataProvider dataProvider;
   final TextEditingController _chatController = TextEditingController();
-  List<local.Message> chat = [];
   bool aiLoading = false;
   final ScrollController _scrollController = ScrollController();
 
@@ -69,10 +67,14 @@ class _ChatPageState extends State<ChatPage> {
     }
 
     setState(() {
-      chat.add(local.Message(author: "user", message: textMessage));
+      dataProvider.addChatMessage(
+        local.LocalMessage(author: "user", message: textMessage),
+      );
       _chatController.clear();
       aiLoading = true;
-      chat.add(local.Message(author: "aiModel", message: ""));
+      dataProvider.addChatMessage(
+        local.LocalMessage(author: "aiModel", message: ""),
+      );
     });
     _scrollDown();
 
@@ -84,11 +86,7 @@ class _ChatPageState extends State<ChatPage> {
       _activeGemmaChat!.generateChatResponseAsync().listen(
         (gemma.ModelResponse response) {
           if (response is gemma.TextResponse) {
-            setState(() {
-              if (chat.isNotEmpty && chat.last.author == "aiModel") {
-                chat.last.message += response.token;
-              }
-            });
+            dataProvider.updateLastChatMessage(response.token);
             _scrollDown();
           }
         },
@@ -96,24 +94,25 @@ class _ChatPageState extends State<ChatPage> {
           setState(() {
             aiLoading = false;
           });
+          dataProvider.finishStreamingResponse();
         },
         onError: (error) {
           setState(() {
             aiLoading = false;
-            if (chat.isNotEmpty && chat.last.author == "aiModel") {
-              chat.last.message += "\n\n[Error generating response: $error]";
-            }
+            dataProvider.updateLastChatMessage(
+              "\n\n[Error generating response: $error]",
+            );
           });
+          dataProvider.finishStreamingResponse();
           _scrollDown();
         },
       );
     } catch (e) {
       setState(() {
         aiLoading = false;
-        if (chat.isNotEmpty && chat.last.author == "aiModel") {
-          chat.last.message += "\n\n[Exception: $e]";
-        }
+        dataProvider.updateLastChatMessage("\n\n[Exception: $e]");
       });
+      dataProvider.finishStreamingResponse();
       _scrollDown();
     }
   }
@@ -130,23 +129,37 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () => dataProvider.clearChat(),
+            icon: Icon(MdiIcons.deleteOutline, color: Colors.white30),
+            tooltip: 'Borrar historial',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Stack(
         children: [
           Column(
             children: [
               Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.only(
-                    top: 20,
-                    bottom: 150, // Space for the floating input
-                    left: 20,
-                    right: 20,
-                  ),
-                  itemCount: chat.length,
-                  itemBuilder:
-                      (context, index) => MessageWidget(message: chat[index]),
+                child: Consumer<DataProvider>(
+                  builder: (context, provider, child) {
+                    return ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.only(
+                        top: 20,
+                        bottom: 150, // Space for the floating input
+                        left: 20,
+                        right: 20,
+                      ),
+                      itemCount: provider.chatMessages.length,
+                      itemBuilder:
+                          (context, index) => MessageWidget(
+                            message: provider.chatMessages[index],
+                          ),
+                    );
+                  },
                 ),
               ),
             ],

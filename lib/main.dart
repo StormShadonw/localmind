@@ -86,14 +86,30 @@ class _MyAppState extends State<MyApp> {
                               ),
                               textStyle: Theme.of(context).textTheme.bodyMedium!
                                   .copyWith(color: secondaryTextColor),
-                              selectedTextStyle: Theme.of(context).textTheme.bodyMedium!
+                              selectedTextStyle: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium!
                                   .copyWith(color: Colors.white),
-                              itemPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                              selectedItemPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                              itemMargin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              selectedItemMargin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              itemPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 12,
+                              ),
+                              selectedItemPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 12,
+                              ),
+                              itemMargin: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              selectedItemMargin: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               itemTextPadding: const EdgeInsets.only(left: 15),
-                              selectedItemTextPadding: const EdgeInsets.only(left: 15),
+                              selectedItemTextPadding: const EdgeInsets.only(
+                                left: 15,
+                              ),
                               iconTheme: IconThemeData(
                                 color: secondaryTextColor,
                                 size: 20,
@@ -111,7 +127,10 @@ class _MyAppState extends State<MyApp> {
                               ),
                             ),
                             extendedTheme: SidebarXTheme(
-                              width: size.width * 0.20 > 225 ? 225 : size.width * 0.20,
+                              width:
+                                  size.width * 0.20 > 225
+                                      ? 225
+                                      : size.width * 0.20,
                               decoration: BoxDecoration(
                                 color: surfaceColor,
                                 border: Border(
@@ -121,23 +140,32 @@ class _MyAppState extends State<MyApp> {
                                 ),
                               ),
                             ),
-                            headerBuilder: (context, extended) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                              child: Image.asset(
-                                "assets/images/app_${interfaceProvider.sidebarController.extended ? "logo" : "icon"}.png",
-                                height: 40,
-                              ).animate().fadeIn(),
-                            ),
+                            headerBuilder:
+                                (context, extended) => Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 42,
+                                    left: 16,
+                                    right: 16,
+                                    bottom: 16,
+                                  ),
+                                  child:
+                                      Image.asset(
+                                        "assets/images/app_${interfaceProvider.sidebarController.extended ? "logo" : "icon"}.png",
+                                        height: 40,
+                                      ).animate().fadeIn(),
+                                ),
                             items: [
                               SidebarXItem(
                                 icon: MdiIcons.chat,
                                 label: "Chat",
-                                onTap: () => interfaceProvider.setSidebarIndex(0),
+                                onTap:
+                                    () => interfaceProvider.setSidebarIndex(0),
                               ),
                               SidebarXItem(
                                 icon: MdiIcons.viewGridPlus,
                                 label: "Modelos",
-                                onTap: () => interfaceProvider.setSidebarIndex(1),
+                                onTap:
+                                    () => interfaceProvider.setSidebarIndex(1),
                               ),
                             ],
                           ),
@@ -161,7 +189,7 @@ class _MyAppState extends State<MyApp> {
     return Consumer<DataProvider>(
       builder: (context, dataProvider, child) {
         if (dataProvider.isModelReady) return const SizedBox.shrink();
-        
+
         return Positioned.fill(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -187,18 +215,22 @@ class _MyAppState extends State<MyApp> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          MdiIcons.brain,
-                          size: 48,
-                          color: primaryColor,
-                        ),
-                      ).animate(onPlay: (controller) => controller.repeat())
-                       .shimmer(duration: 2.seconds, color: primaryColor.withOpacity(0.3)),
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: primaryColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              MdiIcons.brain,
+                              size: 48,
+                              color: primaryColor,
+                            ),
+                          )
+                          .animate(onPlay: (controller) => controller.repeat())
+                          .shimmer(
+                            duration: 2.seconds,
+                            color: primaryColor.withOpacity(0.3),
+                          ),
                       const SizedBox(height: 32),
                       Text(
                         dataProvider.downloadStatusText,
@@ -214,8 +246,13 @@ class _MyAppState extends State<MyApp> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ] else if (dataProvider.isDownloading) ...[
@@ -225,7 +262,9 @@ class _MyAppState extends State<MyApp> {
                             value: dataProvider.downloadProgress / 100,
                             minHeight: 8,
                             backgroundColor: Colors.white.withOpacity(0.05),
-                            valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              primaryColor,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -234,7 +273,8 @@ class _MyAppState extends State<MyApp> {
                           children: [
                             Text(
                               "${dataProvider.downloadProgressDouble.toStringAsFixed(1)}%",
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: primaryColor),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: primaryColor),
                             ),
                             if (dataProvider.totalSizeText.isNotEmpty)
                               Text(
@@ -246,7 +286,9 @@ class _MyAppState extends State<MyApp> {
                       ] else ...[
                         CircularProgressIndicator(
                           strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            primaryColor,
+                          ),
                         ),
                       ],
                     ],
