@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:localmind/helpers/converters_helper.dart';
 import 'package:localmind/helpers/dis_space_helper.dart';
+import 'package:localmind/helpers/process_helper.dart';
 import 'package:localmind/models/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +15,7 @@ class DataProvider extends ChangeNotifier {
 
   bool isModelReady = false;
   bool isDownloading = false;
+  bool isInitializing = false; // Prevents concurrent initializations
   int downloadProgress = 0;
   double downloadProgressDouble = 0.0;
   bool hasError = false;
@@ -92,6 +94,9 @@ class DataProvider extends ChangeNotifier {
   }
 
   Future<void> _initGemmaModel() async {
+    if (isInitializing) return;
+    isInitializing = true;
+
     isModelReady = false;
     isDownloading = false;
     hasError = false;
@@ -222,11 +227,38 @@ class DataProvider extends ChangeNotifier {
       hasError = true;
       downloadStatusText = "Error loading model: $e";
       notifyListeners();
-      print(e);
+      print("DataProvider: Error during model initialization: $e");
+    } finally {
+      isInitializing = false;
+      notifyListeners();
+    }
+  }
+
+  /// Restarts the Gemma service by cleaning up existing processes and re-initializing
+  Future<void> restartGemmaService() async {
+    downloadStatusText = "Restarting Local AI service...";
+    isModelReady = false;
+    hasError = false;
+    notifyListeners();
+
+    try {
+      // 1. Clean up stale processes
+      await ProcessHelper.cleanupOldGemmaInstances();
+
+      // 2. Re-initialize the plugin (this starts the server)
+      await FlutterGemma.initialize();
+
+      // 3. Re-run our internal init logic to mount the model
+      await _initGemmaModel();
+    } catch (e) {
+      print("DataProvider: Error during service restart: $e");
+      hasError = true;
+      downloadStatusText = "Failed to restart service: $e";
+      notifyListeners();
     }
   }
 
   void retryInitialization() {
-    _initGemmaModel();
+    restartGemmaService();
   }
 }

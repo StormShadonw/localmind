@@ -40,8 +40,14 @@ class _ChatPageState extends State<ChatPage> {
     try {
       if (dataProvider.activeModel != null) {
         _activeGemmaChat = await dataProvider.activeModel!.createChat();
-        // Pre-populate chat context with existing messages
-        for (var msg in dataProvider.chatMessages) {
+        // Limit history to avoid overloading the local gRPC server during bootstrap
+        // Taking the last 10 messages (approx 5 turns)
+        final historyLimit = 10;
+        final history = dataProvider.chatMessages.length > historyLimit
+            ? dataProvider.chatMessages.sublist(dataProvider.chatMessages.length - historyLimit)
+            : dataProvider.chatMessages;
+
+        for (var msg in history) {
           if (msg.message.isNotEmpty) {
             await _activeGemmaChat!.addQueryChunk(
               gemma.Message.text(text: msg.message, isUser: msg.author == "user"),
@@ -122,12 +128,32 @@ class _ChatPageState extends State<ChatPage> {
           dataProvider.finishStreamingResponse();
         },
         onError: (error) {
+          print("ChatPage: gRPC Error detected: $error");
           setState(() {
             aiLoading = false;
-            dataProvider.updateLastChatMessage(
-              "\n\n[Error generating response: $error]",
-            );
           });
+
+          final errorStr = error.toString().toLowerCase();
+          if (errorStr.contains("unavailable") ||
+              errorStr.contains("connection refused") ||
+              errorStr.contains("socketexception")) {
+            
+            dataProvider.updateLastChatMessage(
+              "\n\n[Conexión perdida con el servicio de IA. Reiniciando...]",
+            );
+            
+            // Trigger automatic restart of the background service
+            dataProvider.restartGemmaService().then((_) {
+              dataProvider.updateLastChatMessage(
+                "\n[Servicio reiniciado. Por favor, reintenta tu mensaje.]",
+              );
+            });
+          } else {
+            dataProvider.updateLastChatMessage(
+              "\n\n[Error generatindo respuesta: $error]",
+            );
+          }
+          
           dataProvider.finishStreamingResponse();
           _scrollDown();
         },
