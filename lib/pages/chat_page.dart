@@ -31,9 +31,26 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
   }
 
+  bool _isInitializing = false;
+
   Future<void> _initChat() async {
-    if (dataProvider.activeModel != null) {
-      _activeGemmaChat = await dataProvider.activeModel!.createChat();
+    if (_isInitializing) return;
+    _isInitializing = true;
+
+    try {
+      if (dataProvider.activeModel != null) {
+        _activeGemmaChat = await dataProvider.activeModel!.createChat();
+        // Pre-populate chat context with existing messages
+        for (var msg in dataProvider.chatMessages) {
+          if (msg.message.isNotEmpty) {
+            await _activeGemmaChat!.addQueryChunk(
+              gemma.Message.text(text: msg.message, isUser: msg.author == "user"),
+            );
+          }
+        }
+      }
+    } finally {
+      _isInitializing = false;
     }
   }
 
@@ -68,12 +85,20 @@ class _ChatPageState extends State<ChatPage> {
 
     setState(() {
       dataProvider.addChatMessage(
-        local.LocalMessage(author: "user", message: textMessage),
+        local.LocalMessage(
+          author: "user",
+          message: textMessage,
+          timestamp: DateTime.now(),
+        ),
       );
       _chatController.clear();
       aiLoading = true;
       dataProvider.addChatMessage(
-        local.LocalMessage(author: "aiModel", message: ""),
+        local.LocalMessage(
+          author: "aiModel",
+          message: "",
+          timestamp: DateTime.now(),
+        ),
       );
     });
     _scrollDown();
@@ -131,7 +156,10 @@ class _ChatPageState extends State<ChatPage> {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () => dataProvider.clearChat(),
+            onPressed: () async {
+              dataProvider.clearChat();
+              await _initChat();
+            },
             icon: Icon(MdiIcons.deleteOutline, color: Colors.white30),
             tooltip: 'Borrar historial',
           ),

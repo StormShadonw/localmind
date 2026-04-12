@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:intl/intl.dart';
 import 'package:localmind/models/message.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
@@ -67,6 +68,18 @@ class MessageWidget extends StatelessWidget {
                         color: Colors.black26,
                         borderRadius: BorderRadius.circular(8),
                       ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    DateFormat('h:mm a').format(message.timestamp),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.white30,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w300,
                     ),
                   ),
                 ),
