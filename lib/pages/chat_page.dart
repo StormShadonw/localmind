@@ -29,6 +29,11 @@ class _ChatPageState extends State<ChatPage> {
     dataProvider = Provider.of<DataProvider>(context, listen: false);
     _initChat();
     super.initState();
+
+    // Scroll to the bottom once the chat list is laid out
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollDown();
+    });
   }
 
   bool _isInitializing = false;
@@ -136,7 +141,9 @@ class _ChatPageState extends State<ChatPage> {
           final errorStr = error.toString().toLowerCase();
           if (errorStr.contains("unavailable") ||
               errorStr.contains("connection refused") ||
-              errorStr.contains("socketexception")) {
+              errorStr.contains("socketexception") ||
+              errorStr.contains("forcefully terminated") ||
+              errorStr.contains("errorcode: 10")) {
             
             dataProvider.updateLastChatMessage(
               "\n\n[Conexión perdida con el servicio de IA. Reiniciando...]",
@@ -148,6 +155,13 @@ class _ChatPageState extends State<ChatPage> {
                 "\n[Servicio reiniciado. Por favor, reintenta tu mensaje.]",
               );
             });
+          } else if (error is FormatException ||
+              errorStr.contains("surrogate") ||
+              errorStr.contains("formatexception")) {
+            // Encoding error in the stream — the partial response is still usable
+            dataProvider.updateLastChatMessage(
+              "\n\n[Respuesta truncada por error de codificación]",
+            );
           } else {
             dataProvider.updateLastChatMessage(
               "\n\n[Error generatindo respuesta: $error]",

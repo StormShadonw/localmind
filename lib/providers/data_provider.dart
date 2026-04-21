@@ -10,6 +10,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 class DataProvider extends ChangeNotifier {
   List<LocalMessage> chatMessages = [];
   double ramAvailable = 0;
+
+  /// Sanitizes a string by removing lone surrogate code units (U+D800–U+DFFF)
+  /// which are invalid in UTF-8 and cause FormatException in Dart's decoder.
+  static String _sanitizeToken(String token) {
+    final buffer = StringBuffer();
+    for (int i = 0; i < token.length; i++) {
+      final codeUnit = token.codeUnitAt(i);
+      // Skip lone surrogates (0xD800–0xDFFF)
+      if (codeUnit >= 0xD800 && codeUnit <= 0xDFFF) {
+        // Check if it's a valid surrogate pair
+        if (codeUnit <= 0xDBFF && i + 1 < token.length) {
+          final next = token.codeUnitAt(i + 1);
+          if (next >= 0xDC00 && next <= 0xDFFF) {
+            // Valid surrogate pair — keep both
+            buffer.writeCharCode(codeUnit);
+            buffer.writeCharCode(next);
+            i++; // skip the low surrogate
+            continue;
+          }
+        }
+        // Lone surrogate — replace with Unicode replacement character
+        buffer.writeCharCode(0xFFFD);
+        continue;
+      }
+      buffer.writeCharCode(codeUnit);
+    }
+    return buffer.toString();
+  }
   double ramTotal = 0;
   double hdAvailable = 0;
 
@@ -98,9 +126,20 @@ class DataProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final String? chatJson = prefs.getString('chat_history');
     if (chatJson != null) {
-      final List<dynamic> decoded = jsonDecode(chatJson);
-      chatMessages = decoded.map((m) => LocalMessage.fromMap(m)).toList();
-      notifyListeners();
+      try {
+        final List<dynamic> decoded = jsonDecode(chatJson);
+        chatMessages = decoded.map((m) {
+          final msg = LocalMessage.fromMap(m);
+          // Sanitize any persisted messages that may contain invalid surrogates
+          msg.message = _sanitizeToken(msg.message);
+          return msg;
+        }).toList();
+        notifyListeners();
+      } catch (e) {
+        print("DataProvider: Failed to load chat history (corrupt data): $e");
+        chatMessages = [];
+        notifyListeners();
+      }
     }
   }
 
@@ -120,7 +159,7 @@ class DataProvider extends ChangeNotifier {
 
   void updateLastChatMessage(String token) {
     if (chatMessages.isNotEmpty && chatMessages.last.author == "aiModel") {
-      chatMessages.last.message += token;
+      chatMessages.last.message += _sanitizeToken(token);
       notifyListeners();
       // We don't save on every token for performance, only on complete or manual trigger
     }
