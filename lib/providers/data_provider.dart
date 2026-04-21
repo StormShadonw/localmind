@@ -16,6 +16,7 @@ class DataProvider extends ChangeNotifier {
   bool isModelReady = false;
   bool isDownloading = false;
   bool isInitializing = false; // Prevents concurrent initializations
+  bool needsConfirmation = true; // User must confirm before downloading
   int downloadProgress = 0;
   double downloadProgressDouble = 0.0;
   bool hasError = false;
@@ -30,8 +31,67 @@ class DataProvider extends ChangeNotifier {
 
   DataProvider.Init() {
     _loadSystemInfo();
-    _initGemmaModel();
+    _checkModelAndInit();
     _loadChatMessages();
+  }
+
+  /// Checks if the model is already installed. If so, initializes directly.
+  /// Otherwise, sets needsConfirmation so the UI shows a prompt first.
+  Future<void> _checkModelAndInit() async {
+    try {
+      // Try to get the active model directly — if the model file already exists,
+      // the install() call inside _initGemmaModel is essentially a no-op.
+      // We attempt a quick mount to see if it's already available.
+      downloadStatusText = "Checking for local model...";
+      notifyListeners();
+
+      // Use the install flow with a flag to detect if download is needed.
+      // We'll always require confirmation on first use, but if the model
+      // is already installed, skip confirmation.
+      final modelUrl =
+          'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm';
+
+      bool downloadNeeded = false;
+
+      await FlutterGemma.installModel(
+        modelType: ModelType.gemmaIt,
+      ).fromNetwork(modelUrl).withProgress((progress) {
+        // If progress callback fires, it means a download is happening
+        downloadNeeded = true;
+      }).install();
+
+      if (!downloadNeeded) {
+        // Model was already installed, no download occurred — skip confirmation
+        needsConfirmation = false;
+        downloadStatusText = "Mounting model into memory...";
+        notifyListeners();
+
+        activeModel = await FlutterGemma.getActiveModel(maxTokens: 2048);
+        isModelReady = true;
+        notifyListeners();
+      } else {
+        // Download happened during this check — model should be ready now
+        needsConfirmation = false;
+        downloadStatusText = "Mounting model into memory...";
+        notifyListeners();
+
+        activeModel = await FlutterGemma.getActiveModel(maxTokens: 2048);
+        isModelReady = true;
+        notifyListeners();
+      }
+    } catch (e) {
+      // Model is not installed or check failed — show confirmation
+      needsConfirmation = true;
+      downloadStatusText = "";
+      notifyListeners();
+    }
+  }
+
+  /// Called when the user confirms they want to download the model.
+  void confirmAndStartDownload() {
+    needsConfirmation = false;
+    notifyListeners();
+    _initGemmaModel();
   }
 
   Future<void> _loadChatMessages() async {
