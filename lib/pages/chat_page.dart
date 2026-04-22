@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gemma/core/chat.dart';
 import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:localmind/models/message.dart' as local;
@@ -22,7 +23,7 @@ class _ChatPageState extends State<ChatPage> {
   bool aiLoading = false;
   final ScrollController _scrollController = ScrollController();
 
-  dynamic _activeGemmaChat;
+  late InferenceChat _activeGemmaChat;
 
   @override
   void initState() {
@@ -48,14 +49,20 @@ class _ChatPageState extends State<ChatPage> {
         // Limit history to avoid overloading the local gRPC server during bootstrap
         // Taking the last 10 messages (approx 5 turns)
         final historyLimit = 10;
-        final history = dataProvider.chatMessages.length > historyLimit
-            ? dataProvider.chatMessages.sublist(dataProvider.chatMessages.length - historyLimit)
-            : dataProvider.chatMessages;
+        final history =
+            dataProvider.chatMessages.length > historyLimit
+                ? dataProvider.chatMessages.sublist(
+                  dataProvider.chatMessages.length - historyLimit,
+                )
+                : dataProvider.chatMessages;
 
         for (var msg in history) {
           if (msg.message.isNotEmpty) {
-            await _activeGemmaChat!.addQueryChunk(
-              gemma.Message.text(text: msg.message, isUser: msg.author == "user"),
+            await _activeGemmaChat.addQueryChunk(
+              gemma.Message.text(
+                text: msg.message,
+                isUser: msg.author == "user",
+              ),
             );
           }
         }
@@ -144,11 +151,10 @@ class _ChatPageState extends State<ChatPage> {
               errorStr.contains("socketexception") ||
               errorStr.contains("forcefully terminated") ||
               errorStr.contains("errorcode: 10")) {
-            
             dataProvider.updateLastChatMessage(
               "\n\n[Conexión perdida con el servicio de IA. Reiniciando...]",
             );
-            
+
             // Trigger automatic restart of the background service
             dataProvider.restartGemmaService().then((_) {
               dataProvider.updateLastChatMessage(
@@ -167,7 +173,7 @@ class _ChatPageState extends State<ChatPage> {
               "\n\n[Error generatindo respuesta: $error]",
             );
           }
-          
+
           dataProvider.finishStreamingResponse();
           _scrollDown();
         },

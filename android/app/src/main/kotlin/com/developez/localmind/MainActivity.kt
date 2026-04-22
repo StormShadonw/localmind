@@ -1,4 +1,4 @@
-package com.example.localmind
+package com.developez.localmind
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -8,7 +8,7 @@
 PRODUCT_NAME = localmind
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.localmind
+PRODUCT_BUNDLE_IDENTIFIER = com.developez.localmind
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
