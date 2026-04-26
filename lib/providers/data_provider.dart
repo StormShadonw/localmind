@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:localmind/helpers/converters_helper.dart';
 import 'package:localmind/helpers/dis_space_helper.dart';
-import 'package:localmind/helpers/process_helper.dart';
 import 'package:localmind/models/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -341,8 +340,11 @@ class DataProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Clean up stale processes
-      await ProcessHelper.cleanupOldGemmaInstances();
+      // 1. Clean up cleanly instead of killing the process
+      if (activeModel != null) {
+        await activeModel!.close();
+        activeModel = null;
+      }
 
       // 2. Re-initialize the plugin (this starts the server)
       await FlutterGemma.initialize();

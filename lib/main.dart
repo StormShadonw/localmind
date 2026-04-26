@@ -10,14 +10,10 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:provider/provider.dart';
 import 'package:sidebarx/sidebarx.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:localmind/helpers/process_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Cleanup any old orphaned instances before starting
-  await ProcessHelper.cleanupOldGemmaInstances();
-  
+
   await FlutterGemma.initialize();
   windowManager.ensureInitialized().then((value) async {
     // Set up window closing interception
@@ -48,8 +44,6 @@ class _MyAppState extends State<MyApp> with WindowListener {
 
   @override
   void onWindowClose() async {
-    // Cleanup instances when the window is closed
-    await ProcessHelper.cleanupOldGemmaInstances();
     // Effectively close the window
     await windowManager.destroy();
   }
@@ -223,9 +217,10 @@ class _MyAppState extends State<MyApp> with WindowListener {
             child: Container(
               color: backgroundColor.withOpacity(0.7),
               child: Center(
-                child: dataProvider.needsConfirmation
-                    ? _buildConfirmationCard(context, dataProvider)
-                    : _buildDownloadProgressCard(context, dataProvider),
+                child:
+                    dataProvider.needsConfirmation
+                        ? _buildConfirmationCard(context, dataProvider)
+                        : _buildDownloadProgressCard(context, dataProvider),
               ),
             ),
           ),
@@ -239,143 +234,152 @@ class _MyAppState extends State<MyApp> with WindowListener {
     DataProvider dataProvider,
   ) {
     return Container(
-      width: 460,
-      padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 40,
-            offset: const Offset(0, 10),
+          width: 460,
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 40,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  MdiIcons.downloadCircleOutline,
-                  size: 48,
-                  color: primaryColor,
-                ),
-              )
-              .animate()
-              .fadeIn(duration: 600.ms)
-              .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1)),
-          const SizedBox(height: 28),
-          Text(
-            "Modelo de IA requerido",
-            style: Theme.of(context).textTheme.titleLarge,
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: 16),
-          Text(
-            "Para utilizar LocalMind, es necesario descargar un modelo de inteligencia artificial en tu dispositivo. Esto permite que todo funcione de forma local y privada.",
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      MdiIcons.downloadCircleOutline,
+                      size: 48,
+                      color: primaryColor,
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 600.ms)
+                  .scale(
+                    begin: const Offset(0.8, 0.8),
+                    end: const Offset(1, 1),
+                  ),
+              const SizedBox(height: 28),
+              Text(
+                "Modelo de IA requerido",
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 200.ms),
+              const SizedBox(height: 16),
+              Text(
+                "Para utilizar LocalMind, es necesario descargar un modelo de inteligencia artificial en tu dispositivo. Esto permite que todo funcione de forma local y privada.",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: secondaryTextColor,
                   height: 1.6,
                 ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(delay: 300.ms),
-          const SizedBox(height: 24),
-          // Info chips
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.03),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.06)),
-            ),
-            child: Row(
-              children: [
-                _buildInfoItem(
-                  context,
-                  icon: MdiIcons.harddisk,
-                  label: "Tamaño",
-                  value: "~3.4 GB",
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 300.ms),
+              const SizedBox(height: 24),
+              // Info chips
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
                 ),
-                Container(
-                  width: 1,
-                  height: 32,
-                  color: Colors.white.withOpacity(0.08),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withOpacity(0.06)),
                 ),
-                _buildInfoItem(
-                  context,
-                  icon: MdiIcons.brain,
-                  label: "Modelo",
-                  value: "Gemma 4",
+                child: Row(
+                  children: [
+                    _buildInfoItem(
+                      context,
+                      icon: MdiIcons.harddisk,
+                      label: "Tamaño",
+                      value: "~3.4 GB",
+                    ),
+                    Container(
+                      width: 1,
+                      height: 32,
+                      color: Colors.white.withOpacity(0.08),
+                    ),
+                    _buildInfoItem(
+                      context,
+                      icon: MdiIcons.brain,
+                      label: "Modelo",
+                      value: "Gemma 4",
+                    ),
+                    Container(
+                      width: 1,
+                      height: 32,
+                      color: Colors.white.withOpacity(0.08),
+                    ),
+                    _buildInfoItem(
+                      context,
+                      icon: MdiIcons.shieldLockOutline,
+                      label: "Privacidad",
+                      value: "100% local",
+                    ),
+                  ],
                 ),
-                Container(
-                  width: 1,
-                  height: 32,
-                  color: Colors.white.withOpacity(0.08),
-                ),
-                _buildInfoItem(
-                  context,
-                  icon: MdiIcons.shieldLockOutline,
-                  label: "Privacidad",
-                  value: "100% local",
-                ),
-              ],
-            ),
-          ).animate().fadeIn(delay: 400.ms),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(
-                MdiIcons.informationOutline,
-                size: 14,
-                color: secondaryTextColor.withOpacity(0.6),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  "Se requiere una conexión a internet estable para la descarga.",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              ).animate().fadeIn(delay: 400.ms),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    MdiIcons.informationOutline,
+                    size: 14,
+                    color: secondaryTextColor.withOpacity(0.6),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      "Se requiere una conexión a internet estable para la descarga.",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: secondaryTextColor.withOpacity(0.6),
                         fontSize: 11,
                       ),
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(delay: 450.ms),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => dataProvider.confirmAndStartDownload(),
+                  icon: Icon(MdiIcons.download, size: 20),
+                  label: const Text("Descargar e instalar"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 18,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: "Poppins",
+                    ),
+                  ),
                 ),
-              ),
+              ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
             ],
-          ).animate().fadeIn(delay: 450.ms),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => dataProvider.confirmAndStartDownload(),
-              icon: Icon(MdiIcons.download, size: 20),
-              label: const Text("Descargar e instalar"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 18,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: "Poppins",
-                ),
-              ),
-            ),
-          ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).scale(
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .scale(
           begin: const Offset(0.95, 0.95),
           end: const Offset(1, 1),
           duration: 400.ms,
@@ -397,18 +401,18 @@ class _MyAppState extends State<MyApp> with WindowListener {
           Text(
             value,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: secondaryTextColor.withOpacity(0.7),
-                  fontSize: 10,
-                ),
+              color: secondaryTextColor.withOpacity(0.7),
+              fontSize: 10,
+            ),
           ),
         ],
       ),
@@ -443,11 +447,7 @@ class _MyAppState extends State<MyApp> with WindowListener {
                   color: primaryColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  MdiIcons.brain,
-                  size: 48,
-                  color: primaryColor,
-                ),
+                child: Icon(MdiIcons.brain, size: 48, color: primaryColor),
               )
               .animate(onPlay: (controller) => controller.repeat())
               .shimmer(
@@ -485,9 +485,7 @@ class _MyAppState extends State<MyApp> with WindowListener {
                 value: dataProvider.downloadProgress / 100,
                 minHeight: 8,
                 backgroundColor: Colors.white.withOpacity(0.05),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  primaryColor,
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
               ),
             ),
             const SizedBox(height: 16),
@@ -495,9 +493,10 @@ class _MyAppState extends State<MyApp> with WindowListener {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "${dataProvider.downloadProgressDouble.toStringAsFixed(1)}%",
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: primaryColor),
+                  "${dataProvider.downloadProgress}%",
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: primaryColor),
                 ),
                 if (dataProvider.totalSizeText.isNotEmpty)
                   Text(
@@ -509,9 +508,7 @@ class _MyAppState extends State<MyApp> with WindowListener {
           ] else ...[
             CircularProgressIndicator(
               strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                primaryColor,
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
             ),
           ],
         ],

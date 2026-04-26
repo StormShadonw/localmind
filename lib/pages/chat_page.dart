@@ -23,7 +23,7 @@ class _ChatPageState extends State<ChatPage> {
   bool aiLoading = false;
   final ScrollController _scrollController = ScrollController();
 
-  late InferenceChat _activeGemmaChat;
+  InferenceChat? _activeGemmaChat;
 
   @override
   void initState() {
@@ -58,7 +58,7 @@ class _ChatPageState extends State<ChatPage> {
 
         for (var msg in history) {
           if (msg.message.isNotEmpty) {
-            await _activeGemmaChat.addQueryChunk(
+            await _activeGemmaChat!.addQueryChunk(
               gemma.Message.text(
                 text: msg.message,
                 isUser: msg.author == "user",
